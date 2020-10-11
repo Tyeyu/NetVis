@@ -1,5 +1,14 @@
-<template> </template>
+<template>
+
+</template>
+
 <script>
-export default {};
+    export default {
+        name: "AppParallel"
+        //提交测试
+    }
 </script>
-<style></style>
+
+<style scoped>
+
+</style>
