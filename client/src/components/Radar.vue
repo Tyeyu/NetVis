@@ -1,7 +1,7 @@
 <template>
     <div>
-        <div>雷达图</div>
-        <div class="container"></div>
+        <!-- <div>雷达图</div> -->
+        <div id="container"></div>
     </div>
 </template>
 <script>
@@ -15,17 +15,17 @@ export default {
             }
         },
         initchart:function(){
-            let width=600;
-            let height=300;
-            let svg=d3.select(".container")
-                    .append("svg");
+            let width=document.getElementById("container").clientWidth;
+            let height=document.getElementById("container").clientHeight;
+            let svg=d3.select("#container")
+                    .append("svg").attr("width","100%").attr("height","100%");
             let main=svg.append("g")
                     .classed("main",true)
-                    // .attr('transform', "translate(" + width/2 + ',' + height/2 + ')');
+                    .attr('transform', "translate(" + width/2 + ',' + height/2 + ')');
             // 设定一些方便计算的常量
             var radius = 100,
             // 指标的个数，即fieldNames的长度
-            total = 8,
+            total = 6,
             // 需要将网轴分成几级，即网轴上从小到大有多少个正多边形
             level = 4,
             // 网轴的范围，类似坐标轴
@@ -79,6 +79,10 @@ export default {
     height: 35%;
     background-color: #e8e9f0;
     
+}
+#container{
+    width: 100%;
+    height: 100%;
 }
 .webs polygon {
 fill: white;
