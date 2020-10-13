@@ -1,10 +1,9 @@
 <template>
   <div id="app">
-    <img src="./assets/logo.png" />
-    <TimeLine></TimeLine>
-    <Radar></Radar>
-    <Parallel></Parallel>
-    <Net></Net>
+    <TimeLine id="timeLine"></TimeLine>
+    <Radar id="radar"></Radar>
+    <Parallel id="parallel"></Parallel>
+    <Net id="net"></Net>
   </div>
 </template>
 
