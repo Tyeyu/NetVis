@@ -10,9 +10,13 @@
     "build": "node build/build.js"
   },
   "dependencies": {
+    "axios": "^0.20.0",
     "d3": "^6.2.0",
     "echarts": "^4.9.0",
-    "vue": "^2.5.2"
+    "iview": "^3.5.4",
+    "jquery": "^3.5.1",
+    "vue": "^2.5.2",
+    "vue-router": "^3.4.6"
   },
   "devDependencies": {
     "autoprefixer": "^7.1.2",
