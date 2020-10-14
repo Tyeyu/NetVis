@@ -3,7 +3,7 @@
 import Vue from 'vue'
 import App from './App'
 import router from './router/index';
-
+import store from "./vuex/store";
 Vue.config.productionTip = false
 
 import $ from 'jquery'
@@ -30,5 +30,6 @@ router.afterEach(route => {
 new Vue({
   el: '#app',
   components: { App },
-  template: '<App/>'
+  template: '<App/>',
+  store
 })
