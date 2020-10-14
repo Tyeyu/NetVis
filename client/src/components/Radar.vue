@@ -1,7 +1,7 @@
 <template>
     <div>
         <!-- <div>雷达图</div> -->
-        <div id="container"></div>
+        <div id="radarContainer"></div>
     </div>
 </template>
 <script>
@@ -64,9 +64,7 @@ export default {
             let that=this;
             let points=[];
             for(let i=0;i<that.circles.length;i++){
-                console.log(that.circles[i])
                 var ps=that.AreaDatas(that.circles[i])[0].points;
-                console.log(that.AreaDatas(that.circles[i]))
                 let x=0,y=0;
                 for(let j=0;j<ps.length;j++){
                     x+=ps[j].x;
@@ -94,9 +92,9 @@ export default {
         },
         initchart:function(){
             let that=this;
-            let width=document.getElementById("container").clientWidth;
-            let height=document.getElementById("container").clientHeight;
-            let svg=d3.select("#container")
+            let width=document.getElementById("radarContainer").clientWidth;
+            let height=document.getElementById("radarContainer").clientHeight;
+            let svg=d3.select("#radarContainer")
                     .append("svg").attr("width","100%").attr("height","100%");
             that.main=svg.append("g")
                     .classed("main",true)
@@ -235,7 +233,7 @@ export default {
     background-color: #e8e9f0;
     
 }
-#container{
+#radarContainer{
     width: 100%;
     height: 100%;
 }
