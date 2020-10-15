@@ -111,9 +111,9 @@
                             destIp:d.destIp
                         }
                     });
-                    // console.log(d3.nest().key(d=>d.SrcIp).entries(res.data).map(d=>d.key));
+
                     y['SrcIp'] = d3.scalePoint()
-                        .domain(d3.nest().key(d=>d.SrcIp).entries(res.data).map(d=>d.key))
+                        .domain(Array.from( d3.group(res.data,d=>d.SrcIp).keys()))
                         .range([parallel_chart.height-parallel_chart.margin.top*2, 0])
 
                     y['dateTime'] = d3.scaleTime()
@@ -133,8 +133,9 @@
                     //     .range([parallel_chart.height, 0])
 
                     y['destIp'] = d3.scalePoint()
-                        .domain(d3.nest().key(d=>d.destIp).entries(res.data).map(d=>d.key))
+                        .domain(Array.from( d3.group(res.data,d=>d.destIp).keys() ))
                         .range([parallel_chart.height-parallel_chart.margin.top*2, 0])
+
 
                     // console.log(date_extent);
                     parallel_chart.svg
@@ -264,9 +265,8 @@
                             destIp:d.destIp
                         }
                     });
-                    // console.log(d3.nest().key(d=>d.SrcIp).entries(res.data).map(d=>d.key));
                     y['SrcIp'] = d3.scalePoint()
-                        .domain(d3.nest().key(d=>d.SrcIp).entries(res.data).map(d=>d.key))
+                        .domain(Array.from( d3.group(res.data,d=>d.SrcIp).keys() ))
                         .range([parallel_chart.height-parallel_chart.margin.top*2, 0])
 
                     y['dateTime'] = d3.scaleTime()
@@ -286,7 +286,7 @@
                     //     .range([parallel_chart.height, 0])
 
                     y['destIp'] = d3.scalePoint()
-                        .domain(d3.nest().key(d=>d.destIp).entries(res.data).map(d=>d.key))
+                        .domain(Array.from( d3.group(res.data,d=>d.destIp).keys() ))
                         .range([parallel_chart.height-parallel_chart.margin.top*2, 0])
 
                     // console.log(date_extent);
@@ -334,13 +334,13 @@
 </script>
 
 <style scoped>
-  #parallel_chart{
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    height: 50%;
-    /*background-color: #2c3e50;*/
-  }
+  /*#parallel_chart{*/
+  /*  position: absolute;*/
+  /*  bottom: 0;*/
+  /*  width: 100%;*/
+  /*  height: 50%;*/
+  /*  background-color: #2c3e50;*/
+  /*}*/
 
   #parallel_chart_main{
     position: relative;
