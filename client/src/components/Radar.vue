@@ -10,9 +10,9 @@ import Readcsv from "../ToolJs/Readcsv"
 export default {
     data(){
             return {
-                filename:['totalbytes','cpu_load','priority','status','NCon','NVol'],
+                filename:['NCon','NVol','srcip','destip','srcport','destport'],
                 values:[100,70,30,40,50,60,70,80],
-                radius :100,
+                radius :80,
                 // 指标的个数，即fieldNames的长度
                 total :6,
                 // 需要将网轴分成几级，即网轴上从小到大有多少个正多边形
@@ -24,10 +24,11 @@ export default {
                 onePiece :0,
                 main:null,
                 areas:null,
-                totalbytesScale:null,
-                cpu_loadScale:null,
-                priorityScale:null,
-                statusScale:null,
+                 
+                srcipScale:null,
+                destipScale:null,
+                srcportScale:null,
+                destportScale:null,
                 NConScale:null,
                 NVolScale:null,
                 drawcircledata:[],
@@ -244,45 +245,45 @@ export default {
             .text(function(d,i) {
                 return that.filename[i];
             });
-        }
-        ,
-        TbytesScale:function(){
+        },
+      
+        sipScale:function(){
             let Scales=d3.scaleLinear()
                     .domain([d3.min(this.allcircledata, function(d) {
-                                return parseFloat(d.totalbytes);
+                                return parseFloat(d.srcip);
                     }),
                     d3.max(this.allcircledata, function(d) {
-                                    return parseFloat(d.totalbytes);
+                                    return parseFloat(d.srcip);
                     })]).range([this.rangeMin, this.rangeMax])
             return Scales;
         },
-        cpSclse:function(){
+        dipSclse:function(){
             let Scales=d3.scaleLinear()
                     .domain([d3.min(this.allcircledata, function(d) {
-                                return parseFloat(d.cpu_load);
+                                return parseFloat(d.destip);
                     }),
                     d3.max(this.allcircledata, function(d) {
-                                    return parseFloat(d.cpu_load);
+                                    return parseFloat(d.destip);
                     })]).range([this.rangeMin, this.rangeMax])
             return Scales;
          },
-        priScale:function(){
+        sportScale:function(){
              let Scales=d3.scaleLinear()
                     .domain([d3.min(this.allcircledata, function(d) {
-                                return parseFloat(d.priority);
+                                return parseFloat(d.srcport);
                     }),
                     d3.max(this.allcircledata, function(d) {
-                                    return parseFloat(d.priority);
+                                    return parseFloat(d.srcport);
                     })]).range([this.rangeMin, this.rangeMax])
             return Scales;
         },
-        staScale:function(){
+        dportScale:function(){
              let Scales=d3.scaleLinear()
                     .domain([d3.min(this.allcircledata, function(d) {
-                                return parseFloat(d.status);
+                                return parseFloat(d.destport);
                     }),
                     d3.max(this.allcircledata, function(d) {
-                                    return parseFloat(d.status);
+                                    return parseFloat(d.destport);
                     })]).range([this.rangeMin, this.rangeMax])
             return Scales;
         },
@@ -317,22 +318,76 @@ export default {
                 if(currentime>=startdate&&currentime<=enddate){
                     // this.drawcircledata.push(this.allcircledata[i]);
                     let x=[];
+                     //NCon,NVol,srcip,destip,srcport,destport
                     //['totalbytes','cpu_load','priority','status','NCon','NVol']
-                    x.push(this.totalbytesScale(parseFloat(this.allcircledata[i]['totalbytes'])));
-                    x.push(this.cpu_loadScale(parseFloat(this.allcircledata[i]['cpu_load'])));
-                    x.push(this.priorityScale(parseFloat(this.allcircledata[i]['priority'])));
-                    x.push(this.statusScale(parseFloat(this.allcircledata[i]['status'])));
                     x.push(this.NConScale(parseFloat(this.allcircledata[i]['NCon'])));
                     x.push(this.NVolScale(parseFloat(this.allcircledata[i]['NVol'])));
+                    x.push(this.srcipScale(parseFloat(this.allcircledata[i]['srcip'])));
+                    x.push(this.destipScale(parseFloat(this.allcircledata[i]['destip'])));
+                    x.push(this.srcportScale(parseFloat(this.allcircledata[i]['srcport'])));
+                    x.push(this.destportScale(parseFloat(this.allcircledata[i]['destport'])));
                     this.circles.push(x);
                 }
             }
+        },
+        zb:function(length,i,r){
+            let that=this;
+            let barpeace=this.arc/(length+1);
+            return {x:(that.radius+r) * Math.sin(i *  barpeace),y:(that.radius+r) * Math.cos(i *  barpeace)};
+        },
+        drawbar:function(){
+        let that=this;
+        let testdata=[{info:4,warning:3},{info:15,warning:4},{info:4,warning:3},{info:4,warning:3},{info:4,warning:7},{info:4,warning:3},{info:4,warning:3},{info:4,warning:3},{info:4,warning:3},{info:4,warning:3},{info:4,warning:3},{info:4,warning:3},{info:4,warning:3},{info:4,warning:3},{info:4,warning:3},{info:4,warning:3},{info:4,warning:3},{info:4,warning:3}]
+        const colorArray = ['#38CCCB', '#0074D9', '#2FCC40', '#FEDC00', '#FF4036', 'lightgrey'];
+        let stack=d3.stack().keys(["info","warning"]).order(d3.stackOrderNone).offset(d3.stackOffsetNone);
+        let series=stack(testdata);
+        let index=0;
+        this.main.append("g")
+        .classed("b_circle",true)
+        .selectAll("g")
+        .data(series)
+        .enter()
+        .append("g")
+        .attr("fill",function(d,i){return colorArray[i]})
+        .attr("class",function(d){return d.key})
+        .selectAll("path")
+        .data(function(d){
+            return d;
+        })
+        .enter()
+        .append("path")
+        
+        .attr("d",function(d,i){
+            
+            index+=1;
+            let startp=that.zb(testdata.length,i,d[0]);
+            let second=that.zb(testdata.length,(i+1),d[0]);
+            let three=that.zb(testdata.length,(i+1),d[1]);
+            let four=that.zb(testdata.length,i,d[1]);
+            if(index==1)
+            {
+                return "M"+startp.x+" "+startp.y+" A "
+            +(that.radius+d[0])+" "+(that.radius+d[0]) +" 0 0 0 "+second.x
+            +" "+second.y+" L" +three.x
+            +" "+three.y+" L"+four.x+" "+four.y+" Z";
+            }
+            else{
+                  return "M"+startp.x+" "+startp.y+" L "+second.x
+            +" "+second.y+" L" +three.x
+            +" "+three.y+" L"+four.x+" "+four.y+" Z";
+            }
+            
+        })
         }
     },
     mounted() {
+       
         Readcsv.Read_radarcsv();
         this.initchart();
         this.drawcircle();
+        this.drawbar()
+        
+        
     },
     computed:{
         Radardata(){
@@ -346,10 +401,11 @@ export default {
         Radardata:function(newval,oldval){
             this.allcircledata=newval;
             //初始化比例尺
-            this.totalbytesScale=this.TbytesScale();
-            this.cpu_loadScale=this.cpSclse();
-            this.statusScale=this.staScale();
-            this.priorityScale=this.priScale();
+             //NCon,NVol,srcip,destip,srcport,destport
+            this.srcipScale=this.sipScale();
+            this.destipScale=this.dipSclse();
+            this.srcportScale=this.sportScale();
+            this.destportScale=this.dportScale();
             this.NConScale=this.NCScale();
             this.NVolScale=this.NVScale();
             this.circledata();
