@@ -33,7 +33,9 @@ export default {
                 NVolScale:null,
                 drawcircledata:[],
                 allcircledata:[],
-                circles:[]//测试数据
+                circles:[],//测试数据,
+                allbardata:[],
+                barscale:null
             };
     },
     methods:{
@@ -199,24 +201,6 @@ export default {
             // 添加g分组包含所有雷达图区域
             that.areas = that.main.append('g')
                         .classed('areas', true);
-            // that.drawradar(that.values);
-            // 绘制雷达图区域下的点
-            // var circles = area.append('g')
-            //             .classed('circles', true);
-            //     circles.selectAll('circle')
-            //     .data(areaData.points)
-            //     .enter()
-            //     .append('circle')
-            //     .attr('cx', function(d) {
-            //         return d.x;
-            //     })
-            //     .attr('cy', function(d) {
-            //         return d.y;
-            //     })
-            //     .attr('r', 3)
-            //     .attr('stroke', function(d, index) {
-            //         return that.getColor(i);
-            //     });
             
             // 计算文字标签坐标
             var textPoints = [];
@@ -307,6 +291,18 @@ export default {
                     })]).range([this.rangeMin, this.rangeMax])
             return Scales;
         },
+        BScale:function(data){
+            
+             let Scales=d3.scaleLinear()
+                    .domain([d3.min(data, function(d) {
+                                return (parseInt(d.info)+parseInt(d.warning));
+                    }),
+                    d3.max(data, function(d) {
+                                    return (parseInt(d.info)+parseInt(d.warning));
+                    })]).range([0, 20])
+            // console.log(Scales(1000))
+            return Scales;
+        },
         circledata:function(){
             let selectTime=this.$store.getters.getSelectTime;
             this.circles=[]
@@ -333,11 +329,27 @@ export default {
         zb:function(length,i,r){
             let that=this;
             let barpeace=this.arc/(length+1);
-            return {x:(that.radius+r) * Math.sin(i *  barpeace),y:(that.radius+r) * Math.cos(i *  barpeace)};
+            
+            return {x:(that.radius+10+that.barscale(parseInt(r))) * Math.sin(i *  barpeace),
+                    y:(that.radius+10+that.barscale(parseInt(r))) * Math.cos(i *  barpeace)};
         },
         drawbar:function(){
         let that=this;
-        let testdata=[{info:4,warning:3},{info:15,warning:4},{info:4,warning:3},{info:4,warning:3},{info:4,warning:7},{info:4,warning:3},{info:4,warning:3},{info:4,warning:3},{info:4,warning:3},{info:4,warning:3},{info:4,warning:3},{info:4,warning:3},{info:4,warning:3},{info:4,warning:3},{info:4,warning:3},{info:4,warning:3},{info:4,warning:3},{info:4,warning:3}]
+
+        let selectTime=this.$store.getters.getSelectTime;
+        let testdata=[]    
+        let startdate=new Date(selectTime[0]);
+        let enddate=new Date(selectTime[1]);
+        
+        for(let i=0;i<that.allbardata.length;i++){
+            let currentime=new Date(that.allbardata[i].time);
+           
+            if(currentime>=startdate&&currentime<=enddate){
+                testdata.push({info:that.allbardata[i].Info,warning:that.allbardata[i].Warning});
+            }
+        }
+       this.barscale=this.BScale(testdata);
+        
         const colorArray = ['#38CCCB', '#0074D9', '#2FCC40', '#FEDC00', '#FF4036', 'lightgrey'];
         let stack=d3.stack().keys(["info","warning"]).order(d3.stackOrderNone).offset(d3.stackOffsetNone);
         let series=stack(testdata);
@@ -385,7 +397,7 @@ export default {
         Readcsv.Read_radarcsv();
         this.initchart();
         this.drawcircle();
-        this.drawbar()
+        
         
         
     },
@@ -399,7 +411,8 @@ export default {
     },
     watch:{
         Radardata:function(newval,oldval){
-            this.allcircledata=newval;
+            this.allcircledata=newval.radar1;
+            this.allbardata=newval.radar2;
             //初始化比例尺
              //NCon,NVol,srcip,destip,srcport,destport
             this.srcipScale=this.sipScale();
@@ -411,6 +424,8 @@ export default {
             this.circledata();
             this.drawcircle();
             
+            
+            this.drawbar()
         },
         SelectTime:function(newval,oldval){
             this.circledata();
