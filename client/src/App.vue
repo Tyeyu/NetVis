@@ -68,7 +68,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-align: center;
-    color: #2c3e50;
+    /*color: #2c3e50;*/
     /*margin-top: 60px;*/
     overflow: hidden;
   }
@@ -98,6 +98,6 @@
     bottom: 0;
     width: 100%;
     height: 38%;
-    background-color: #2c3e50;
+    /*background-color: #2c3e50;*/
   }
 </style>
