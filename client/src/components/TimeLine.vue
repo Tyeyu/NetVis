@@ -1,4 +1,4 @@
-<template> 
+<template>
     <div id='TimelineContainer'>
         <div id='TimelineTitle'>
             <div id='TimelineContext'> Overview </div>
@@ -10,7 +10,6 @@
     </div>
 </template>
 <script>
-
 export default {
     name: 'Timeline',
     data() {
@@ -47,7 +46,7 @@ export default {
             ContainerGraphHeight = $('#TimelineGraph').height(),
             ContainerOverview = d3.select('#TimelineGraph-Overview'),
             ContainerDetails = d3.select('#TimelineGraph-Details'),
-            
+
             ContainerOverviewWidth = $('#TimelineGraph-Overview').width(),
             ContainerOverviewHeight = $('#TimelineGraph-Overview').height(),
 
@@ -61,14 +60,14 @@ export default {
 
         let ContainerOverviewBorder = {'top': ContainerOverviewHeight * 0.1, 'bottom': ContainerOverviewHeight * 0.1, 'left': ContainerOverviewWidth * 0.1, 'Width': ContainerOverviewWidth * 0.1},
             ContainerDetailsBorder = {'top': ContainerDetailsHeight * 0.1, 'bottom': ContainerDetailsHeight * 0.1, 'left': ContainerDetailsWidth * 0.1, 'Width': ContainerDetailsWidth * 0.1}
-        
+
 
         let ScaleXOverview = d3.scaleTime()
             .domain(d3.extent(self.timeline_dic.time, (d) => {return d3.timeParse("%Y-%m-%d %H:%M:%S")(d) }))
             .range([0, ContainerOverviewWidth]),
             ScaleXDetails = d3.scaleTime()
 
-        
+
         //scaleY
         let linelist = ['status', 'priority', 'cpu_load', 'totalbytes', 'srcip_entropy', 'destip_entropy', 'srcport_entropy', 'destport_entropy']
         let ScaleY = {}
@@ -106,7 +105,7 @@ export default {
                 //draw bottom axis
             ContainerLineEntity[linelist[order]]['axis'] = ContainerLineEntity[linelist[order]]['container']
                 .append('g').attr('transform', () => {return 'translate(0,' + ContainerItemsHeight + ')'}).call(ScaleXOverview)
-                
+
             ContainerLineEntity[linelist[order]]['line'] = ContainerLineEntity[linelist[order]]['container']
                 .append('path')
                 .datum(() => {
@@ -129,7 +128,7 @@ export default {
         },
         DataInit(){
             let self = this;
-            
+
             d3.csv('static/timeline.csv', (d) => {
                 //totalbytes,cpu_load,priority,status,NCon,NVol,srcip_entropy,destip_entropy,srcport_entropy,destport_entropy
                 let keys = Object.keys(d),
