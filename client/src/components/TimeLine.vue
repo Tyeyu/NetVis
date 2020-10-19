@@ -1,7 +1,7 @@
 <template>
     <div id='TimelineContainer'>
         <div id='TimelineTitle'>
-            <div id='TimelineContext'> Overview </div>
+            <div id='TimelineContext'>Event Timeline </div>
         </div>
         <div id='TimelineGraph'>
             <div id='TimelineGraph-Overview'></div>
@@ -40,89 +40,163 @@ export default {
     },
     methods:{
         ChartInit(data){
-            //get width height
-        let self = this;
-        let ContainerGraphWidth = $('#TimelineGraph').width(),
-            ContainerGraphHeight = $('#TimelineGraph').height(),
-            ContainerOverview = d3.select('#TimelineGraph-Overview'),
-            ContainerDetails = d3.select('#TimelineGraph-Details'),
+            //get container width height
+            let self = this;
+            let ContainerGraphWidth = $('#TimelineGraph').width(),
+                ContainerGraphHeight = $('#TimelineGraph').height(),
+                ContainerOverview = d3.select('#TimelineGraph-Overview'),
+                ContainerDetails = d3.select('#TimelineGraph-Details'),
 
-            ContainerOverviewWidth = $('#TimelineGraph-Overview').width(),
-            ContainerOverviewHeight = $('#TimelineGraph-Overview').height(),
+                ContainerOverviewWidth = $('#TimelineGraph-Overview').width(),
+                ContainerOverviewHeight = $('#TimelineGraph-Overview').height(),
 
-            ContainerDetailsWidth = $('#TimelineGraph-Details').width(),
-            ContainerDetailsHeight = $('#TimelineGraph-Details').height(),
+                ContainerDetailsWidth = $('#TimelineGraph-Details').width(),
+                ContainerDetailsHeight = $('#TimelineGraph-Details').height()
+        
+            let ContainerOverviewMargin = {'top': ContainerOverviewHeight * 0.05, 'bottom': ContainerOverviewHeight * 0.05, 'left': ContainerOverviewWidth * 0.05, 'right': ContainerOverviewWidth * 0.05},
+                ContainerDetailsMargin = {'top': ContainerDetailsHeight * 0.05, 'bottom': ContainerDetailsHeight * 0.05, 'left': ContainerDetailsWidth * 0.05, 'right': ContainerDetailsWidth * 0.05}
+            
+            //line container space number / line container high
+            let ContainerSpace = 10,
+                ContainerItemsHeight = (ContainerOverviewHeight - ContainerOverviewMargin.top - ContainerOverviewMargin.bottom) / ContainerSpace
 
-            ContainerItemsHeight = ContainerOverviewHeight / 9
+            //svg container border
+            let ConOverview = d3.select('#TimelineGraph-Overview').append('svg')
+                .attr('width', ContainerOverviewWidth - ContainerOverviewMargin.right)
+                .attr('height', ContainerOverviewHeight - ContainerOverviewMargin.top - ContainerOverviewMargin.bottom)
+                .attr('transform', () => {return 'translate(0' + ',' + ContainerOverviewMargin.top + ')'})
+                .style('float', 'left'),
+                ConDetails = d3.select('TimelineGraph-Details').append('svg')
+                .attr('width', ContainerDetailsWidth - ContainerDetailsMargin.right)
+                .attr('height', ContainerDetailsHeight - ContainerDetailsMargin.top - ContainerDetailsMargin.bottom)
+                .attr('transform', () => {return 'translate(0' + ',' + ContainerDetailsMargin.top + ')'})
+                .style('float', 'left')
 
-        let ConOverview = d3.select('#TimelineGraph-Overview').append('svg').attr('width', ContainerOverviewWidth).attr('height', ContainerOverviewHeight),
-            ConDetails = d3.select('TimelineGraph-Details').append('svg').attr('width', ContainerDetailsWidth).attr('height', ContainerDetailsHeight)
+            //ScaleX universal
+            let ScaleXOverview = d3.scaleTime()
+                .domain(d3.extent(self.timeline_dic.time, (d) => {return d3.timeParse("%Y-%m-%d %H:%M:%S")(d)}))
+                .range([0, ContainerOverviewWidth - ContainerOverviewMargin.left - ContainerOverviewMargin.right]),
+                ScaleXDetails = d3.scaleTime()
 
-        let ContainerOverviewBorder = {'top': ContainerOverviewHeight * 0.1, 'bottom': ContainerOverviewHeight * 0.1, 'left': ContainerOverviewWidth * 0.1, 'Width': ContainerOverviewWidth * 0.1},
-            ContainerDetailsBorder = {'top': ContainerDetailsHeight * 0.1, 'bottom': ContainerDetailsHeight * 0.1, 'left': ContainerDetailsWidth * 0.1, 'Width': ContainerDetailsWidth * 0.1}
+            // ScaleY customization & line container customization
+            let linelist = ['status', 'priority', 'cpu_load', 'totalbytes', 'srcip_entropy', 'destip_entropy', 'srcport_entropy', 'destport_entropy'],
+                listDict = {
+                    'status': {
+                        'Title': 'Status',
+                        'Color': '#747d8c',
+                    }, 
+                    'priority': {
+                        'Title': 'Priority',
+                        'Color': '#747d8c',
+                    },
+                    'cpu_load': {
+                        'Title': 'Cpu Load',
+                        'Color': '#747d8c'
+                    },
+                    'totalbytes': {
+                        'Title': 'Total Bytes',
+                        'Color': '#747d8c'
+                    },
+                    'srcip_entropy': {
+                        'Title': 'Srcip',
+                        'Color': '#1e90ff'
+                    },
+                    'destip_entropy': {
+                        'Title': 'Destip',
+                        'Color': '#70a1ff'
+                    },
+                    'srcport_entropy': {
+                        'Title': 'Srcport',
+                        'Color': '#2ed573'
+                    },
+                    'destport_entropy': {
+                        'Title': 'Destport',
+                        'Color': '#7bed9f'
+                    }
+                },
+                ScaleY = {},
+                ContainerLineEntity = {}
 
+            linelist.forEach((d,i) => {
+                ScaleY[d] = {}
+                ScaleY[d]['ScaleY'] = {}
+                ScaleY[d]['ScaleY']['name'] = d
+                ScaleY[d]['ScaleY']['entity'] = d3.scaleLinear().domain([d3.min(self.timeline_dic[d]), d3.max(self.timeline_dic[d])]).range([ContainerItemsHeight, 0])
 
-        let ScaleXOverview = d3.scaleTime()
-            .domain(d3.extent(self.timeline_dic.time, (d) => {return d3.timeParse("%Y-%m-%d %H:%M:%S")(d) }))
-            .range([0, ContainerOverviewWidth]),
-            ScaleXDetails = d3.scaleTime()
+                ContainerLineEntity[d] = {}
+                ContainerLineEntity[d]['container'] = ConOverview.append('g').attr('id', () => {return 'Container-line-' + d})
+                    .attr('width', ContainerOverviewWidth - ContainerOverviewMargin.right)
+                    .attr('height', ContainerItemsHeight)
+                    .style('border', '2px solid grey')
+            })
 
+            //line container position calculation
+            let gap = Math.floor((ContainerSpace - 2) / 2)
+            for(let i=0; i<ContainerSpace; i++){
+                let order = i,
+                    AxisXtemp = null;
+                //gap mid space
+                if(order == gap){
+                    continue;
+                } else if (i < gap){
+                    order = i;
+                } else if (i > gap){
+                    order = i-1
+                }
+                if (i == ContainerSpace - 1) {
+                    continue;
+                }
 
-        //scaleY
-        let linelist = ['status', 'priority', 'cpu_load', 'totalbytes', 'srcip_entropy', 'destip_entropy', 'srcport_entropy', 'destport_entropy']
-        let ScaleY = {}
-        let ContainerLineEntity = {}
+                // final AxisX has ticks
+                if(i == ContainerSpace - 2){
+                    AxisXtemp = d3.axisBottom(ScaleXOverview)
+                } else {
+                    AxisXtemp = d3.axisBottom(ScaleXOverview).tickFormat(() => {return ''})
+                }
 
-        linelist.forEach((d,i) => {
-            ScaleY[d] = {}
-            ScaleY[d]['ScaleY'] = {}
-            ScaleY[d]['ScaleY']['name'] = d
-            ScaleY[d]['ScaleY']['entity'] = d3.scaleLinear().domain([d3.min(self.timeline_dic[d]), d3.max(self.timeline_dic[d])]).range([ContainerItemsHeight, 0])
-
-            ContainerLineEntity[d] = {}
-            ContainerLineEntity[d]['container'] = ConOverview.append('g').attr('id', () => {return 'Container-line-' + d}).attr('width', ContainerOverviewWidth).attr('height', ContainerItemsHeight).style('border', '2px solid grey')
-        })
-
-
-        //line container position calculation
-
-
-        for(let i=0; i<9; i++){
-            let order = i;
-            if(i == 4) continue;
-            if(i < 4){
-                order = i;
-            } else if (i > 4){
-                order = i-1
-            }
-            let line = d3.line()
-                .x((v) => {return ScaleXOverview(d3.timeParse("%Y-%m-%d %H:%M:%S")(v.x))})
-                .y((v) => {return ScaleY[linelist[order]]['ScaleY']['entity'](v.y)})
-                .curve(d3.curveMonotoneX)
-
-            ContainerLineEntity[linelist[order]]['container'].attr('transform', () => {return "translate(0," +  (order * ContainerItemsHeight ) + ")"})
-
-                //draw bottom axis
-            ContainerLineEntity[linelist[order]]['axis'] = ContainerLineEntity[linelist[order]]['container']
-                .append('g').attr('transform', () => {return 'translate(0,' + ContainerItemsHeight + ')'}).call(ScaleXOverview)
-
-            ContainerLineEntity[linelist[order]]['line'] = ContainerLineEntity[linelist[order]]['container']
-                .append('path')
-                .datum(() => {
-                    let data = [],
-                        key = linelist[order]
-                    self.timeline_datalist.forEach((d) => {
-                        data.push({'x': d['time'], 'y': d[key]})
+                // line generator
+                let line = d3.line()
+                    .x((v) => {return ScaleXOverview(d3.timeParse("%Y-%m-%d %H:%M:%S")(v.x))})
+                    .y((v) => {return ScaleY[linelist[order]]['ScaleY']['entity'](v.y)})
+                    .curve(d3.curveMonotoneX)
+                // line container position
+                ContainerLineEntity[linelist[order]]['container'].attr('transform', () => {return "translate(" + ContainerOverviewMargin.left +"," +  (i * ContainerItemsHeight ) + ")"})
+                //draw AxisX
+                ContainerLineEntity[linelist[order]]['axis'] = ContainerLineEntity[linelist[order]]['container']
+                    .append('g').attr('transform', () => {return "translate(0" +"," + ContainerItemsHeight + ')'}).call(AxisXtemp)
+                //draw line
+                ContainerLineEntity[linelist[order]]['line'] = ContainerLineEntity[linelist[order]]['container']
+                    .append('path')
+                    .datum(() => {
+                        let data = [],
+                            key = linelist[order]
+                        self.timeline_datalist.forEach((d) => {
+                            data.push({'x': d['time'], 'y': d[key]})
+                        })
+                        return data
                     })
-                    return data
-                })
-                .attr('type', linelist[order])
-                .attr('fill', 'none')
-                .attr('stroke', 'steelblue')
-                .attr('stroke-width', 1.5)
-                .attr("d", line)
-                .attr('class', () => {return 'ov-line-' + linelist[order]})
-        }
+                    .attr('type', linelist[order])
+                    .attr('fill', 'none')
+                    .attr('stroke', () => {
+                        return listDict[linelist[order]]['Color']
+                    })
+                    .attr('stroke-width', 1.5)
+                    .attr("d", line)
+                    .attr('class', () => {return 'ov-line-' + linelist[order]})
+
+                 ContainerLineEntity[linelist[order]]['text'] = ContainerLineEntity[linelist[order]]['container']
+                 .append('text')
+                 .text(() => {
+                     return listDict[linelist[order]]['Title']
+                 })
+                 .style('fill', '#515a6e')
+                 .attr('transform', () => {return "translate(" + (-(ContainerOverviewMargin.left / 1.5)) + ',' + (ContainerItemsHeight) + ')'})
+            }
+
+            //not display axis line
+            d3.select('#TimelineGraph-Overview').selectAll('.domain').style('opacity', 0)
+
+
 
         //draw bottom axis
         },
@@ -179,15 +253,19 @@ export default {
 
 #TimelineGraph-Overview {
     width: 100%;
-    height: 67%;
+    height: 80%;
     float: left;
 }
 
 #TimelineGraph-Details {
     width: 100%;
-    height: 33%;
+    height: 20%;
     float: left;
 }
 
+#TimelineContext {
+    color: #555;
+    font-size: 18px;
 
+}
 </style>
