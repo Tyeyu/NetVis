@@ -116,13 +116,15 @@ export default {
 
                 ContainerLineEntity[d] = {}
                 ContainerLineEntity[d]['container'] = ConOverview.append('g').attr('id', () => {return 'Container-line-' + d})
-                    .attr('width', ContainerOverviewWidth - ContainerOverviewMargin.right)
+                    .attr('width', ContainerOverviewWidth - ContainerOverviewMargin.left - ContainerOverviewMargin.right)
                     .attr('height', ContainerItemsHeight)
                     .style('border', '2px solid grey')
             })
 
             //line container position calculation
-            let gap = Math.floor((ContainerSpace - 2) / 2)
+            let gap = Math.floor((ContainerSpace - 2) / 2),
+                ConOverviewLineTitle = ConOverview.append('g').attr('id', 'ConOverviewLineTitle')
+                    .attr('transform', 'translate(0,' + ContainerOverviewMargin.top + ')')
             for(let i=0; i<ContainerSpace; i++){
                 let order = i,
                     AxisXtemp = null;
@@ -175,14 +177,31 @@ export default {
                     .attr("d", line)
                     .attr('class', () => {return 'ov-line-' + self.linelist[order]})
 
-                 ContainerLineEntity[self.linelist[order]]['text'] = ContainerLineEntity[self.linelist[order]]['container']
+                console.log('ContainerOverviewMargin', ContainerOverviewMargin)
+
+                 ContainerLineEntity[self.linelist[order]]['title'] = ConOverviewLineTitle.append('g')
+                    .attr('transform', () => {return "translate(" + ((ContainerOverviewMargin.left / 5)) + ',' + ((i * ContainerItemsHeight) + ContainerOverviewMargin.top) + ')'})
+                
+                ContainerLineEntity[self.linelist[order]]['title']
+                 .append('rect')
+                 .attr('x', 0)
+                 .attr('y', 0)
+                 .attr('width', 6)
+                 .attr('height', 6)
+                 .style('fill', () => {
+                     return self.listDict[self.linelist[order]]['Color']
+                 })
+                 .attr('transform', () => {return "translate(0," + (-(ContainerOverviewMargin.top / 1.66)) +')'})
+                
+                 ContainerLineEntity[self.linelist[order]]['title']
                  .append('text')
                  .text(() => {
                      return self.listDict[self.linelist[order]]['Title']
                  })
                  .style('fill', '#515a6e')
                  .style('font-size', 11)
-                 .attr('transform', () => {return "translate(" + (-(ContainerOverviewMargin.left / 1.5)) + ',' + (ContainerItemsHeight) + ')'})
+                 .attr('transform', () => {return "translate(" + ((ContainerOverviewMargin.left / 5)) + ',0)'})
+                 
             }
 
             //not display axis line
