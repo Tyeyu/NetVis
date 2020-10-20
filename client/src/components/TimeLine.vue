@@ -2,6 +2,7 @@
     <div id='TimelineContainer'>
         <div id='TimelineTitle'>
             <div id='TimelineContext'>Event Timeline </div>
+            <div id="TimeLabel"> Time Range: </div>
         </div>
         <div id='TimelineGraph'>
             <div id='TimelineGraph-Overview'></div>
@@ -77,6 +78,10 @@ export default {
     },
     methods:{
         ChartOverviewInit(data){
+            //duration
+            d3.select('#TimelineGraph-Overview').style('opacity', 1).transition(300).style('opacity', 0)
+            d3.select('#TimelineGraph-Overview').html('')
+            d3.select('#TimelineGraph-Overview').style('opacity', 0).transition(300).style('opacity', 1)
             //get container width height
             let self = this;
             let ContainerGraphWidth = $('#TimelineGraph').width(),
@@ -91,6 +96,16 @@ export default {
             let ContainerSpace = 10,
                 ContainerItemsHeight = (ContainerOverviewHeight - ContainerOverviewMargin.top - ContainerOverviewMargin.bottom) / ContainerSpace
 
+            //Init time table
+            /*
+            d3.select('#TimeLabel')
+            .style('position', 'absolute')
+            .style('transform', () => {
+                return 'translate(' + (ContainerOverviewWidth * 0.8) + ',' + (-(ContainerOverviewMargin.top * 0.85)) + ')'
+            })
+            d3.select('#TimeLabel').style('opacity', 0).transition(300).style('opacity', 1)
+            */
+            
             //svg container border
             let ConOverview = d3.select('#TimelineGraph-Overview').append('svg')
                 .attr('width', ContainerOverviewWidth)
@@ -121,13 +136,8 @@ export default {
                 if (!event.sourceEvent || !selection) return;
                 let [x0, x1] = selection.map(d => ScaleXOverview(DateConvert5Min(ScaleXOverview.invert(d))))
                 d3.select(this).transition().call(brushX.move, [x0, x1]);
-                /*
-                console.log(x0, x1)
-                console.log(new Date(DateConvert5Min(ScaleXOverview.invert(selection[0]))))
-                console.log(new Date(DateConvert5Min(ScaleXOverview.invert(selection[1]))))
-                console.log(ScaleXOverview(DateConvert5Min(ScaleXOverview.invert(selection[0]))))
-                console.log(ScaleXOverview(DateConvert5Min(ScaleXOverview.invert(selection[1]))))
-                */
+                
+                self.ChartDetailInit({start: new Date(DateConvert5Min(ScaleXOverview.invert(selection[0]))), end: new Date(DateConvert5Min(ScaleXOverview.invert(selection[1])))})
             }
 
             function DateConvert5Min(date){
@@ -290,6 +300,10 @@ export default {
         //draw bottom axis
         },
         ChartDetailInit(TimePeriod){
+            // clear container
+            d3.select('#TimelineGraph-Details').style('opacity', 1).transition(300).style('opacity', 0)
+            d3.select('#TimelineGraph-Details').html('')
+            d3.select('#TimelineGraph-Details').style('opacity', 0).transition(300).style('opacity', 1)
             // data start time: "2013-04-10 07:05:00" 
             // data end time: "2013-04-15 10:00:00"
             // timesegment {'start': 2013-04-15 01:00:00, 'end': 2013-04-15 02:00:00}
@@ -309,6 +323,7 @@ export default {
                 .attr('height', ContainerDetailsHeight - ContainerDetailsMargin.top)
                 .attr('transform', () => {return 'translate(0' + ',' + ContainerDetailsMargin.top + ')'})
                 .style('float', 'left')
+
 
             //CALCULATION
             //startIndex endIndex store source time index
@@ -343,6 +358,31 @@ export default {
             })
 
             ScaleYDetails = d3.scaleLinear().domain([linelistmin, linelistmax]).range([ContainerDetailsHeight - ContainerDetailsMargin.top - ContainerDetailsMargin.bottom, 0])
+
+            //svg drag
+            let brushX = d3.brushX().extent([[0,0],[ContainerDetailsWidth - ContainerDetailsMargin.left - ContainerDetailsMargin.right, ContainerDetailsHeight - ContainerDetailsMargin.top - ContainerDetailsMargin.bottom]])
+                    .on("end", brushended),
+                ConDetailsAllLine = ConDetails.append('g')
+                    .attr('height', ContainerDetailsHeight - ContainerDetailsMargin.top - ContainerDetailsMargin.bottom)
+                    .attr('width', () => { return ContainerDetailsWidth - ContainerDetailsMargin.left - ContainerDetailsMargin.right})
+                    .attr('transform', () => {return 'translate('+ ContainerDetailsMargin.left + ',0)'})
+                    .attr('id', 'ConDetailsAllLine')
+                    .call(brushX)
+
+            function DateConvert5Min(date){
+                return Math.floor(date.getTime() / 300000) * 300000
+            }
+            
+            function brushended(event) {
+                const selection = event.selection;
+                if (!event.sourceEvent || !selection) return;
+                let [x0, x1] = selection.map(d => ScaleXDetails(DateConvert5Min(ScaleXDetails.invert(d))))
+                d3.select(this).transition().call(brushX.move, [x0, x1]);
+                let t0 = new Date(DateConvert5Min(ScaleXDetails.invert(selection[0]))).format("yyyy-MM-dd hh:mm:ss"),
+                    t1 = new Date(DateConvert5Min(ScaleXDetails.invert(selection[1]))).format("yyyy-MM-dd hh:mm:ss")
+                self.$store.commit('setSelectTime', [t0, t1])
+                //self.ChartDetailInit({start: new Date(DateConvert5Min(ScaleXDetails.invert(selection[0]))), end: new Date(DateConvert5Min(ScaleXDetails.invert(selection[1])))})
+            }
 
             //Add line
             let ContainerLineEntity = {},
@@ -420,6 +460,11 @@ export default {
                 self.ChartOverviewInit(data)
             })
         },
+        updateTimeLaebl(time){
+            let text = 'Time Range: ' + time.starttime + ' - ' + time.endtime
+            d3.select('#TimeLabel').style('opacity', 1).transition(300).style('opacity', 0)
+            d3.select('#TimeLabel').html(text).style('opacity', 0).transition(300).style('opacity', 1)
+        },
         fnResize(){
 
         }
@@ -461,5 +506,9 @@ export default {
     color: #555;
     font-size: 18px;
 
+}
+#TimeLabel{
+    position: absolute;
+    opacity: 0;
 }
 </style>
