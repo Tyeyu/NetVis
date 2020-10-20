@@ -104,9 +104,47 @@ export default {
                 .range([0, ContainerOverviewWidth - ContainerOverviewMargin.left - ContainerOverviewMargin.right]),
                 ScaleXDetails = d3.scaleTime()
 
-            // ScaleY customization & line container customization
+            // ScaleY customization & brushed & line container customization
             let ScaleY = {},
-                ContainerLineEntity = {}
+                ContainerLineEntity = {},
+                brushX = d3.brushX().extent([[0,0],[ContainerOverviewWidth - ContainerOverviewMargin.left - ContainerOverviewMargin.right, ContainerOverviewHeight - ContainerOverviewMargin.top - ContainerOverviewMargin.bottom]])
+                    .on("end", brushended),
+                ConOverviewAllLine = ConOverview.append('g')
+                    .attr('height', ContainerOverviewHeight - ContainerOverviewMargin.top - ContainerOverviewMargin.bottom)
+                    .attr('width', () => { return ContainerOverviewWidth - ContainerOverviewMargin.left - ContainerOverviewMargin.right})
+                    .attr('transform', () => {return 'translate('+ ContainerOverviewMargin.left + ',0)'})
+                    .attr('id', 'ConOverviewAllLine')
+                    .call(brushX)
+            
+            function brushended(event) {
+                const selection = event.selection;
+                if (!event.sourceEvent || !selection) return;
+                let [x0, x1] = selection.map(d => ScaleXOverview(DateConvert5Min(ScaleXOverview.invert(d))))
+                d3.select(this).transition().call(brushX.move, [x0, x1]);
+                /*
+                console.log(x0, x1)
+                console.log(new Date(DateConvert5Min(ScaleXOverview.invert(selection[0]))))
+                console.log(new Date(DateConvert5Min(ScaleXOverview.invert(selection[1]))))
+                console.log(ScaleXOverview(DateConvert5Min(ScaleXOverview.invert(selection[0]))))
+                console.log(ScaleXOverview(DateConvert5Min(ScaleXOverview.invert(selection[1]))))
+                */
+            }
+
+            function DateConvert5Min(date){
+                return Math.floor(date.getTime() / 300000) * 300000
+            }
+
+            // Add selected time
+            let ConOverviewSelectTime = ConOverview.append('g')
+                .attr('id', 'ConOverviewSelectTime')
+                .attr('transform', 'translate(1000,0)')
+                .append('text')
+                .text('111')
+                .attr('id', 'ConOverviewSelectTimeText')
+                .style('font-size', 12)
+                .style('fill', '#515a6e')
+                .style('font-weight', 900)
+                
             
             self.linelist.forEach((d,i) => {
                 ScaleY[d] = {}
@@ -176,8 +214,6 @@ export default {
                     .attr('stroke-width', 1.5)
                     .attr("d", line)
                     .attr('class', () => {return 'ov-line-' + self.linelist[order]})
-
-                console.log('ContainerOverviewMargin', ContainerOverviewMargin)
 
                  ContainerLineEntity[self.linelist[order]]['title'] = ConOverviewLineTitle.append('g')
                     .attr('transform', () => {return "translate(" + ((ContainerOverviewMargin.left / 5)) + ',' + ((i * ContainerItemsHeight) + ContainerOverviewMargin.top) + ')'})
