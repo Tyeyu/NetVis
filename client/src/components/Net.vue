@@ -6,20 +6,21 @@
 </div> 
 </template>
 <script>
+import Readcsv from "../ToolJs/Readcsv"
 export default {
     data(){
         return{} ;
     },
     methods:{
         init_ip:function(){
-            let width=document.getElementById("rect_ip").clientWidth;
+            let width=document.getElementById("rect_ip").offsetWidth;
             let height=document.getElementById("rect_ip").offsetHeight;
             let svg_ip=d3.select("#rect_ip")
                         .append("svg")
-                        .attr("wdith",2.2*width/5)
+                        .attr("width",width/2.2)
                         .attr("height",height)
-                        // .attr('transform', "translate(" + -(2*width/5.2) + ',' + 0 + ')');
-            let ip_data=[{"link":"1-2",value:10},{"link":"1-3",value:7},{"link":"2-2",value:10},{"link":"3-1",value:10}];
+                        .attr('transform', "translate(" + -(width/21) + ',' + 0 + ')');
+            let ip_data=[{"link":"1-2",value:10},{"link":"1-5",value:7},{"link":"1-6",value:10},{"link":"1-3",value:7},{"link":"3-7",value:7},{"link":"4-8",value:7},{"link":"2-2",value:10},{"link":"3-1",value:10}];
             let yun_ip=new Map();
             let mu_ip=new Map();
             let y_index=0;
@@ -43,8 +44,8 @@ export default {
                                     return d.value;
                     })])
                     .range([0, 1])
-            let rect_x=(2*width/10)/(mu_ip.size+1);
-            let rect_y=height/(2*(yun_ip.size+1));
+            let rect_x=(width/2.2)/(mu_ip.size+2);
+            let rect_y=height/((yun_ip.size+1));
             svg_ip.append("g")
                 //   
                   .selectAll("rect")
@@ -68,14 +69,16 @@ export default {
                 //   .attr('transform', "translate(" + -(rect_x) + ',' + 0 + ')')
         },
         init_port:function(){
+            d3.select("#rect_ip").select(".rect_port").remove();
             let width=document.getElementById("rect_ip").clientWidth;
             let height=document.getElementById("rect_ip").clientHeight;
             let svg_port=d3.select("#rect_ip")
                         .append("svg")
-                        .attr("wdith",2.2*width/5)
+                        .attr("width",width/2.2)
                         .attr("height",height)
-                        .attr('transform', "translate(" + (width/5.2) + ',' + 0 + ')');
-            let port_data=[{"link":"1-2",value:10},{"link":"1-3",value:7},{"link":"2-2",value:10},{"link":"3-1",value:10}];
+                        .classed("rect_port",true)
+                        .attr('transform', "translate(" + (width/21) + ',' + 0 + ')');
+            let port_data=[{"link":"1-2",value:10},{"link":"1-5",value:7},{"link":"1-6",value:10},{"link":"1-3",value:7},{"link":"3-7",value:7},{"link":"4-8",value:7},{"link":"2-2",value:10},{"link":"3-1",value:10}];
             let yun_port=new Map();
             let mu_port=new Map();
             let y_index=0;
@@ -99,8 +102,8 @@ export default {
                                     return d.value;
                     })])
                     .range([0, 1])
-            let rect_x=(2*width/10)/(mu_port.size+1);
-            let rect_y=height/(2*(yun_port.size+1));
+            let rect_x=(width/3)/(mu_port.size+1);
+            let rect_y=height/((yun_port.size+1));
             svg_port.append("g")
                 //   
                   .selectAll("rect")
@@ -126,6 +129,20 @@ export default {
     mounted(){
         this.init_ip();
         this.init_port();
+        let selectTime=this.$store.getters.getSelectTime;
+        let start=selectTime[0],end=selectTime[1];
+        Readcsv.Getips(start,end)
+    },
+    computed:{
+        SelectTime(){
+            return this.$store.getters.getSelectTime;
+        }
+    },
+    watch:{
+        SelectTime:function(newv,oldv){
+            let start=newv[0],end=newv[1];
+            Readcsv.Getips(start,end)
+        }
     }
 };
 </script>

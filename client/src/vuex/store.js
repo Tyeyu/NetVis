@@ -5,6 +5,7 @@ const store= new Vuex.Store({
     state:{
         Radardata:null,
         SelectTime:["2013-04-10 07:05:00","2013-04-10 10:45:00"],
+        ipsdata:null
     },
     mutations:{
         setRadardata:function(state,data){
@@ -12,6 +13,9 @@ const store= new Vuex.Store({
         },
         setSelectTime:function(state,times){
             state.SelectTime=times;
+        },
+        setipsdata:function(state,data){
+            state.ipsdata=data;
         }
     },
     getters:{
@@ -20,6 +24,9 @@ const store= new Vuex.Store({
         },
         getSelectTime:state=>{
             return state.SelectTime;
+        },
+        getipsdata:state=>{
+            return state.ipsdata;
         }
     }
 })

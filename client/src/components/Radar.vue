@@ -19,7 +19,7 @@ export default {
                 level :4,
                 // 网轴的范围，类似坐标轴
                 rangeMin : 0,
-                rangeMax :100,
+                rangeMax :80,
                 arc : 2 * Math.PI,
                 onePiece :0,
                 main:null,
@@ -78,15 +78,23 @@ export default {
             let that=this;
             let points=[];
             for(let i=0;i<that.circles.length;i++){
+                
                 var ps=that.AreaDatas(that.circles[i])[0].points;
+                console.log(ps)
                 let x=0,y=0;
                 for(let j=0;j<ps.length;j++){
                     x+=ps[j].x;
                     y+=ps[j].y;
                 }
-                points.push({x:x,y:y});
+               
+                if(Math.abs(x)>that.radius)
+                  x=x/Math.abs(x)*that.radius
+                if(Math.abs(y)>that.radius)
+                  y=y/Math.abs(y)*that.radius
+                points.push({x:x*3/4,y:y*3/4});
             }
-            
+            console.log(that.radius)
+            console.log(points)
             var circles = that.main.append("g")
                         .classed('circles', true);
                 circles.selectAll('circle')
@@ -142,14 +150,15 @@ export default {
         },
         initchart:function(){
             let that=this;
-            let width=document.getElementById("radarcontainer").clientWidth;
-            let height=document.getElementById("radarcontainer").clientHeight;
+            let width=document.getElementById("radarcontainer").offsetWidth;
+            let height=document.getElementById("radarcontainer").offsetHeight;
             let svg=d3.select("#radarcontainer")
                     .append("svg").attr("width","100%").attr("height","100%");
             that.main=svg.append("g")
                     .classed("main",true)
                     .attr('transform', "translate(" + width/2 + ',' + height/2 + ')');
-           
+            that.radius=height/2-height/8;
+            that.rangeMax=height/2-height/8;
             // 每项指标所在的角度
             that.onePiece = that.arc/that.total;
             // 计算网轴的正多边形的坐标
@@ -160,7 +169,8 @@ export default {
             for(var k=that.level;k>0;k--) {
                 var webs = '',
                 webPoints = [];
-                var r = that.radius/that.level * k;
+                var r = k*that.radius/that.level ;
+                console.log(r);
                 for(var i=0;i<that.total;i++) {
                     var x = r * Math.sin(i *  that.onePiece),
                     y = r * Math.cos(i *  that.onePiece);
@@ -170,6 +180,7 @@ export default {
                     y: y
                     });
                 }
+                console.log(webPoints)
                 polygons.webs.push(webs);
                 polygons.webPoints.push(webPoints);
             }
@@ -196,7 +207,7 @@ export default {
                     .attr('y2', function(d) {
                         return d.y;
                     })
-                    // .attr("stroke","gray");
+                    .attr("stroke","gray");
             
             // 添加g分组包含所有雷达图区域
             that.areas = that.main.append('g')
@@ -395,8 +406,9 @@ export default {
     mounted() {
        
         Readcsv.Read_radarcsv();
+       
         this.initchart();
-        this.drawcircle();
+        // this.drawcircle();
         
         
         
