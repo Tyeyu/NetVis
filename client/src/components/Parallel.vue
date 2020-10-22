@@ -13,13 +13,13 @@
         name: "AppParallel",
         mounted() {
             this.Test_Chart()
-            this.Mini_Test_Chart('mini1')
-            this.Mini_Test_Chart('mini2')
-            this.Mini_Test_Chart('mini3')
-            this.Mini_Test_Chart('mini4')
-            this.Mini_Test_Chart('mini5')
-            this.Mini_Test_Chart('mini6')
-            this.Mini_Test_Chart('mini7')
+            // this.Mini_Test_Chart('mini1')
+            // this.Mini_Test_Chart('mini2')
+            // this.Mini_Test_Chart('mini3')
+            // this.Mini_Test_Chart('mini4')
+            // this.Mini_Test_Chart('mini5')
+            // this.Mini_Test_Chart('mini6')
+            // this.Mini_Test_Chart('mini7')
 
         },
         methods: {
@@ -27,10 +27,10 @@
 
                 let parallel_chart = {}
 
-                parallel_chart.margin = {top: 20, right: 100, bottom: 20, left: 100}
+                parallel_chart.margin = {top: 30, right: 100, bottom: 10, left: 100}
 
                 parallel_chart.width = document.getElementById('parallel_chart_main').offsetWidth - parallel_chart.margin.left * 2;
-                parallel_chart.height = document.getElementById('parallel_chart_main').offsetHeight - parallel_chart.margin.bottom * 2;
+                parallel_chart.height = document.getElementById('parallel_chart_main').offsetHeight - parallel_chart.margin.top;
 
                 parallel_chart.svg = d3.select('#parallel_chart_main').append('svg')
                     .attr("viewBox", [0, 0, parallel_chart.width, parallel_chart.height])
@@ -38,7 +38,13 @@
                     // .attr('height',parallel_chart.height)
                     .append("g")
                     .attr("transform",
-                        "translate(" + parallel_chart.margin.left + "," + parallel_chart.margin.top + ")");
+                        "translate(" + parallel_chart.margin.left + "," + (parallel_chart.margin.top*2 -10) + ")");
+
+                parallel_chart.title = parallel_chart.svg.append('text')
+                    .text('CONNECTION  FLOW')
+                    .attr('class','chart_title')
+                    .attr('x',-80)
+                    .attr('y',-30)
 
                 // Here I set the list of dimension manually to control the order of axis:
                 let dimensions = ["SrcIp", "srcPort", "dateTime", "destPort", 'destIp']
@@ -63,6 +69,12 @@
                     }));
                 }
 
+                let src_g = parallel_chart.svg.append('g')
+                    .attr('transform','translate(-100,0)')
+
+                let dest_g = parallel_chart.svg.append('g')
+                    .attr('transform',`translate(${parallel_chart.width-parallel_chart.margin.right - 20},0)`)
+
                 d3.csv('../../../static/nf_mini_data.csv').then(
                     res1 => {
                         d3.csv('../../../static/mini_data.csv').then(res2 => {
@@ -74,7 +86,7 @@
                                     srcPort: parseInt(d.firstSeenSrcPort),
                                     destPort: parseInt(d.firstSeenDestPort),
                                     destIp: d.firstSeenDestIp,
-                                    IPS:false
+                                    IPS: false
                                 }
                             });
                             res2 = res2.map(d => {
@@ -84,47 +96,246 @@
                                     srcPort: parseInt(d.srcPort),
                                     destPort: parseInt(d.destPort),
                                     destIp: d.destIp,
-                                    IPS:true
+                                    IPS: true
                                 }
                             });
 
                             let res = res2.concat(res1)
 
-                            y['SrcIp'] = d3.scalePoint()
-                                .domain(Array.from(d3.group(res, d => d.SrcIp).keys()))
-                                .range([parallel_chart.height - parallel_chart.margin.top * 2, 0])
+                            let ip_data = Array.from(d3.group(res, d => d.SrcIp).values()).map(d => {
+                                return {
+                                    ip: d[0].SrcIp,
+                                    ip_array: d[0].SrcIp.split('.'),
+                                    value: d.length
+                                }
+                            }).sort((a, b) => {
+                                let arr1 = a.ip.split('.')
+                                let arr2 = b.ip.split('.')
+                                for (let i = 0; i < 4; i++) {
+                                    if (parseInt(arr1[i]) > parseInt(arr2[i])) {
+                                        return 1
+                                    } else if (parseInt(arr1[i]) < parseInt(arr2[i])) {
+                                        return -1
+                                    }
+                                }
+                            })
+
+                            let ip_data_dest = Array.from(d3.group(res, d => d.destIp).values()).map(d => {
+                                return {
+                                    ip: d[0].destIp,
+                                    ip_array: d[0].destIp.split('.'),
+                                    value: d.length
+                                }
+                            }).sort((a, b) => {
+                                let arr1 = a.ip.split('.')
+                                let arr2 = b.ip.split('.')
+                                for (let i = 0; i < 4; i++) {
+                                    if (parseInt(arr1[i]) > parseInt(arr2[i])) {
+                                        return 1
+                                    } else if (parseInt(arr1[i]) < parseInt(arr2[i])) {
+                                        return -1
+                                    }
+                                }
+                            })
+
+
+                            let test_data = {
+                                name: 'root',
+                                children: Array.from(d3.group(ip_data, d => d.ip_array[0]).values()).map(d => {
+                                    return {
+                                        name: d[0].ip_array[0],
+                                        // value:d3.sum(d,d=>d.value),
+                                        children: Array.from(d3.group(d, d => d.ip_array[1]).values()).map(d => {
+                                            return {
+                                                name: d[0].ip_array[1],
+                                                // value: d3.sum(d, d => d.value),
+                                                children: Array.from(d3.group(d, d => d.ip_array[2]).values()).map(d => {
+                                                    return {
+                                                        name: d[0].ip_array[2],
+                                                        // value: d3.sum(d, d => d.value),
+                                                        children: Array.from(d3.group(d, d => d.ip_array[3]).values()).map(d => {
+                                                            return {
+                                                                name: d[0].ip_array[3],
+                                                                // value: d3.sum(d, s => s.value),
+                                                                value: d[0].value
+                                                            }
+                                                        })
+                                                    }
+                                                })
+                                            }
+                                        })
+                                    }
+                                })
+                            }
+                            let test_data_dest = {
+                                name: 'root',
+                                children: Array.from(d3.group(ip_data_dest, d => d.ip_array[0]).values()).map(d => {
+                                    return {
+                                        name: d[0].ip_array[0],
+                                        // value:d3.sum(d,d=>d.value),
+                                        children: Array.from(d3.group(d, d => d.ip_array[1]).values()).map(d => {
+                                            return {
+                                                name: d[0].ip_array[1],
+                                                // value: d3.sum(d, d => d.value),
+                                                children: Array.from(d3.group(d, d => d.ip_array[2]).values()).map(d => {
+                                                    return {
+                                                        name: d[0].ip_array[2],
+                                                        // value: d3.sum(d, d => d.value),
+                                                        children: Array.from(d3.group(d, d => d.ip_array[3]).values()).map(d => {
+                                                            return {
+                                                                name: d[0].ip_array[3],
+                                                                // value: d3.sum(d, s => s.value),
+                                                                value: d[0].value
+                                                            }
+                                                        })
+                                                    }
+                                                })
+                                            }
+                                        })
+                                    }
+                                })
+                            }
+
+                            let partition = data => d3.partition()
+                                .size([parallel_chart.height - parallel_chart.margin.top * 2 + 5, 100])
+                                .padding(1)
+                                (d3.hierarchy(data)
+                                    .sum(d => d.value))
+
+                            let root = partition(test_data)
+                            let root2 = partition(test_data_dest)
+
+                            let color = d3.scaleOrdinal(d3.quantize(d3.interpolateRainbow, test_data.children.length + 1))
+                            let color2 = d3.scaleOrdinal(d3.quantize(d3.interpolateRainbow, test_data_dest.children.length + 1))
+
+                            let cell = src_g.selectAll('g')
+                                .data(root.descendants().filter(d => d.depth !== 0))
+                                .join('g')
+                                .attr("transform", d => `translate(${d.y0},${d.x0})`);
+
+                            cell.append('rect')
+                                .attr("width", d => d.y1 - d.y0)
+                                .attr("height", d => d.x1 - d.x0)
+                                .attr("fill-opacity", 0.6)
+                                .attr("fill", d => {
+                                    // console.log(d);
+                                    if (!d.depth) return "#ccc";
+                                    while (d.depth > 1) d = d.parent;
+                                    return color(d.data.name);
+                                });
+
+                            let cell2 = dest_g.selectAll('g')
+                                .data(root2.descendants().filter(d => d.depth !== 0))
+                                .join('g')
+                                .attr("transform", d => `translate(-${d.y0},${d.x0})`);
+
+
+                            cell2.append('rect')
+                                .attr("width", d => d.y1 - d.y0)
+                                .attr("height", d => d.x1 - d.x0)
+                                .attr("fill-opacity", 0.6)
+                                .attr("fill", d => {
+                                    // console.log(d);
+                                    if (!d.depth) return "#ccc";
+                                    while (d.depth > 1) d = d.parent;
+                                    return color(d.data.name);
+                                });
+
+                            let text = cell.filter(d => (d.x1 - d.x0) > 10)
+                                .append("text")
+                                .style('font-size', '6px')
+                                .attr('dx', '1em')
+                                // .attr('y',d=>d.y0-d.y1)
+                                // .attr("x", 4)
+                                .attr("y", 9);
+
+                            let text2 = cell2.filter(d => (d.x1 - d.x0) > 10)
+                                .append("text")
+                                .style('font-size', '6px')
+                                .attr("x", 4)
+                                .attr("y", 13);
+
+                            text.append("tspan")
+                                .text(d => d.data.name);
+
+                            text2.append("tspan")
+                                .text(d => d.data.name);
+
+                            cell.append("title")
+                                .text(d => `${d.ancestors().map(d => d.data.name).reverse().join(".")}`.replace('root.', ''));
+
+
+                            y['SrcIp'] = d3.scaleBand()
+                                .domain(ip_data.map(d => d.ip).sort((a, b) => {
+                                    let arr1 = a.split('.')
+                                    let arr2 = b.split('.')
+                                    for (let i = 0; i < 4; i++) {
+                                        if (parseInt(arr1[i]) > parseInt(arr2[i])) {
+                                            return 1
+                                        } else if (parseInt(arr1[i]) < parseInt(arr2[i])) {
+                                            return -1
+                                        }
+                                    }
+                                }))
+                                .range([0, parallel_chart.height - parallel_chart.margin.top * 2])
 
                             y['dateTime'] = d3.scaleTime()
                                 .domain(d3.extent(res, d => d.dateTime))
                                 .range([parallel_chart.height - parallel_chart.margin.top * 2, 0])
 
-                            y['srcPort'] = d3.scaleLinear()
+                            y['srcPort'] = d3.scaleSqrt()
                                 .domain(d3.extent(res, d => d.srcPort))
                                 .range([parallel_chart.height - parallel_chart.margin.top * 2, 0])
 
-                            y['destPort'] = d3.scalePoint()
-                                .domain(Array.from(d3.group(res, d => d.destPort).keys()).sort((a,b)=>a-b))
+                            y['destPort'] = d3.scaleSqrt()
+                                .domain(d3.extent(res, d => d.destPort))
                                 .range([parallel_chart.height - parallel_chart.margin.top * 2, 0])
 
-                            y['destIp'] = d3.scalePoint()
-                                .domain(Array.from(d3.group(res, d => d.destIp).keys()))
+                            y['destIp'] = d3.scaleBand()
+                                .domain(ip_data_dest.map(d => d.ip).sort((a, b) => {
+                                    let arr1 = a.split('.')
+                                    let arr2 = b.split('.')
+                                    for (let i = 0; i < 4; i++) {
+                                        if (parseInt(arr1[i]) > parseInt(arr2[i])) {
+                                            return 1
+                                        } else if (parseInt(arr1[i]) < parseInt(arr2[i])) {
+                                            return -1
+                                        }
+                                    }
+                                }))
                                 .range([parallel_chart.height - parallel_chart.margin.top * 2, 0])
 
-                            // console.log(date_extent);
-                            parallel_chart.svg
+                            let brushHeight = 50
+                            let brush = d3.brushY()
+                                .extent([
+                                    [parallel_chart.margin.left, -(brushHeight / 2)],
+                                    [parallel_chart.width - parallel_chart.margin.right, brushHeight / 2]
+                                ])
+                                .on("start brush end", console.log(1));
+
+
+                            // // console.log(date_extent);
+                            let paths = parallel_chart.svg
                                 .selectAll("myPath")
                                 .data(res)
                                 .enter()
                                 .append("path")
                                 .attr("d", path)
                                 .style("fill", "none")
-                                .style("stroke", d=>d.IPS?'#dd421e':'rgba(100,158,221,0.8)')
+                                .style("stroke", d => d.IPS ? '#dd074e' : 'rgba(100,158,221,0.8)')
                                 .style("opacity", 0.1)
-                                .style('stroke-width', 2)
-                            // .on("mouseover", highlight)
-                            // .on("mouseleave", doNotHighlight )
+                                .style('stroke-width', 1)
+                                .on("mouseover", function (d) {
+                                    d3.select(this).style('stroke-width', 3).style('opacity', 1)
+                                })
+                                .on("mouseout", function () {
+                                    d3.select(this).style('stroke-width', 1).style('opacity', .1)
+                                })
+                                .append('title')
+                                .text(d => `${d.SrcIp}:${d.srcPort}->${d.destIp}:${d.destPort}`)
                             //
-                            //     // Draw the axis:
+                            // //
+                            // //     // Draw the axis:
                             parallel_chart.svg.selectAll("myAxis")
                             // For each dimension of the dataset I add a 'g' element:
                                 .data(dimensions)
@@ -140,8 +351,12 @@
                                     if (d === 'dateTime')
                                         d3.select(this).call(d3.axisLeft().tickFormat(d3.timeFormat('%M:%S')).scale(y[d]));
                                     else if (d === 'destIp') {
-                                        d3.select(this).call(d3.axisRight().scale(y[d]));
-                                    } else
+                                        // d3.select(this).call(d3.axisRight().tickFormat('').tickSize(0).scale(y[d]));
+                                    }
+                                    else if(d === 'SrcIp'){
+                                        // d3.select(this).call(d3.axisLeft().tickFormat('').tickSize(0).scale(y[d]));
+                                    }
+                                    else
                                         d3.select(this).call(d3.axisLeft().scale(y[d]));
 
                                 })
@@ -153,7 +368,7 @@
                                     return d;
                                 })
                                 .style("fill", "black")
-                        });
+                        })
                     })
             },
             Mini_Test_Chart(id) {
@@ -275,6 +490,9 @@
                                 .each(function (d) {
                                     if (d === 'dateTime')
                                         d3.select(this).call(d3.axisLeft().tickFormat(d3.timeFormat('%M:%S')).scale(y[d]));
+                                    else if(d === 'SrcIp'){
+                                        d3.select(this).call(d3.axisLeft().tickFormat('').scale(y[d]));
+                                    }
                                     else
                                         d3.select(this).call(d3.axisLeft().scale(y[d]));
 
@@ -330,5 +548,8 @@
     background-color: #efefef;
     height: 96%;
     margin: 3px;
+  }
+  .chart_title{
+    font-size: 20px;
   }
 </style>
