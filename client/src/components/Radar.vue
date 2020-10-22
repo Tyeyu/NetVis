@@ -80,7 +80,7 @@ export default {
             for(let i=0;i<that.circles.length;i++){
                 
                 var ps=that.AreaDatas(that.circles[i])[0].points;
-                console.log(ps)
+                // console.log(ps)
                 let x=0,y=0;
                 for(let j=0;j<ps.length;j++){
                     x+=ps[j].x;
@@ -91,10 +91,14 @@ export default {
                   x=x/Math.abs(x)*that.radius
                 if(Math.abs(y)>that.radius)
                   y=y/Math.abs(y)*that.radius
-                points.push({x:x*3/4,y:y*3/4});
+                if(Math.sqrt(x*x+y*y)>that.radius)
+                    points.push({x:x*4/5,y:y*4/5});
+                else{
+                     points.push({x:x,y:y});
+                }
             }
-            console.log(that.radius)
-            console.log(points)
+            // console.log(that.radius)
+            // console.log(points)
             var circles = that.main.append("g")
                         .classed('circles', true);
                 circles.selectAll('circle')
@@ -170,7 +174,7 @@ export default {
                 var webs = '',
                 webPoints = [];
                 var r = k*that.radius/that.level ;
-                console.log(r);
+                // console.log(r);
                 for(var i=0;i<that.total;i++) {
                     var x = r * Math.sin(i *  that.onePiece),
                     y = r * Math.cos(i *  that.onePiece);
@@ -180,7 +184,7 @@ export default {
                     y: y
                     });
                 }
-                console.log(webPoints)
+                // console.log(webPoints)
                 polygons.webs.push(webs);
                 polygons.webPoints.push(webPoints);
             }
@@ -305,12 +309,10 @@ export default {
         BScale:function(data){
             
              let Scales=d3.scaleLinear()
-                    .domain([d3.min(data, function(d) {
-                                return (parseInt(d.info)+parseInt(d.warning));
-                    }),
+                    .domain([0,
                     d3.max(data, function(d) {
                                     return (parseInt(d.info)+parseInt(d.warning));
-                    })]).range([0, 20])
+                    })]).range([0, 2*this.radius/10])
             // console.log(Scales(1000))
             return Scales;
         },
@@ -339,12 +341,15 @@ export default {
         },
         zb:function(length,i,r){
             let that=this;
+            if(length<29)
+                length=29;
             let barpeace=this.arc/(length+1);
-            
-            return {x:(that.radius+10+that.barscale(parseInt(r))) * Math.sin(i *  barpeace),
-                    y:(that.radius+10+that.barscale(parseInt(r))) * Math.cos(i *  barpeace)};
+            // console.log(that.radius,that.barscale(parseInt(r)),that.radius+10+that.barscale(parseInt(r)))
+            return {x:(that.radius+20+that.barscale(parseInt(r))) * Math.sin(i *  barpeace),
+                    y:(that.radius+20+that.barscale(parseInt(r))) * Math.cos(i *  barpeace)};
         },
         drawbar:function(){
+        d3.select("#radarcontainer").select(".b_circle").remove();
         let that=this;
 
         let selectTime=this.$store.getters.getSelectTime;
@@ -360,7 +365,7 @@ export default {
             }
         }
        this.barscale=this.BScale(testdata);
-        
+        console.log( 2*this.radius/10)
         const colorArray = ['#38CCCB', '#0074D9', '#2FCC40', '#FEDC00', '#FF4036', 'lightgrey'];
         let stack=d3.stack().keys(["info","warning"]).order(d3.stackOrderNone).offset(d3.stackOffsetNone);
         let series=stack(testdata);
@@ -379,7 +384,7 @@ export default {
         })
         .enter()
         .append("path")
-        
+        .attr("stroke","gray")
         .attr("d",function(d,i){
             
             index+=1;
@@ -387,6 +392,7 @@ export default {
             let second=that.zb(testdata.length,(i+1),d[0]);
             let three=that.zb(testdata.length,(i+1),d[1]);
             let four=that.zb(testdata.length,i,d[1]);
+            console.log(startp,second,three,four,that.radius)
             if(index==1)
             {
                 return "M"+startp.x+" "+startp.y+" A "
@@ -437,11 +443,12 @@ export default {
             this.drawcircle();
             
             
-            this.drawbar()
+            // this.drawbar()
         },
         SelectTime:function(newval,oldval){
             this.circledata();
             this.drawcircle();
+            this.drawbar();
         }
     }
 }

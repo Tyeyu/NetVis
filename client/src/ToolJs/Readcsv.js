@@ -14,11 +14,9 @@ const readcsv = {
     },
     Getips:function(startT,endT){
         let result=axios.get("http://127.0.0.1:3000/queryAll",{params:{start:startT,end:endT}});
-        console.log("1111")
         result.then(function(data){
-            console.log(data.data.data);
+            store.commit("setipsdata",data.data.data)
         })
-        console.log(result);
     }
 }
 export default readcsv;
