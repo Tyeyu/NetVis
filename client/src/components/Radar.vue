@@ -10,7 +10,7 @@ import Readcsv from "../ToolJs/Readcsv"
 export default {
     data(){
             return {
-                filename:['NCon','NVol','srcip','destip','srcport','destport'],
+                filename:['NCon (The Number of Connections)','NVol (Network Traffic Volume)','EntropySIP','EntropyDIP','EntropySPort','EntropyDPort'],
                 color:["#27823B","#2857A8","#1E90FF","#70A1FF","#2ED573","#7BED9F"],
                 barcolor:["#38CCCB","#EED11A"],
                 values:[],
@@ -120,6 +120,7 @@ export default {
                 .on("mousemove",function(e,d){
                     let index=d3.select(this).attr("index")
                     that.drawradar(that.circles[index])
+                    // console.log(that.drawcircledata[index])
                     // console.log()
                 })
                 .on("mouseout",function(e,d){
@@ -134,6 +135,19 @@ export default {
                 .attr('r', 3)
                 .attr('stroke', function(d, index) {
                     return that.getColor(0);
+                })
+                .append('title')
+                .classed("tooltip",true)
+                .text(function(d,i){
+                    //NCon,NVol,srcip,destip,srcport,destport
+                    //'NCon ','NVol (Network Traffic Volume)','EntropySIP','EntropyDIP','EntropySPort','EntropyDPort'
+                    return "NCon:"+that.drawcircledata[i].NCon+"\n"
+                            +"NVol:"+that.drawcircledata[i].NVol+"\n"
+                            +"EntropySIP:"+that.drawcircledata[i].srcip+"\n"
+                            +"EntropyDIP:"+that.drawcircledata[i].destip+"\n"
+                            +"EntropySPort:"+that.drawcircledata[i].srcport+"\n"
+                            +"EntropyDPort:"+that.drawcircledata[i].destport;
+                       
                 });
         },
         drawradar:function(data){
@@ -433,14 +447,17 @@ export default {
             }
             
         })
-        }
-        ,drawlabes:function(){
+        },
+        drawlabes:function(){
            let width=document.getElementById("radarcontainer").offsetWidth;
            let height=document.getElementById("radarcontainer").offsetHeight;
+           this.svgs.append("g").append("text").attr("x",10).attr("y",10).text("Radar View");
            let labes= this.svgs
             .append("g")
             .classed("labes",true)
-            .attr('transform', "translate(" + width/1.3 + ',' + (height-100) + ')');
+            .attr("font-size",7)
+            .attr('transform', "translate(" + width/1.4 + ',' + (height-100) + ')');
+
             //熵标签
             labes.append("g")
             .selectAll("rect")
@@ -476,7 +493,7 @@ export default {
 
             labes.append("g")
             .selectAll("text")
-            .data(["info","warning"])
+            .data(["Normal","Warning"])
             .enter()
             .append("text")
             .attr("x",10)
@@ -558,4 +575,18 @@ fill: white;
 stroke-width: 1;
 
 }
+.tooltip{
+font-family:simsun;
+/* font-size:16px; */
+width:120;
+height:auto;
+position:absolute; 
+text-align:center;
+border-style:solid;
+border-width:1px;
+/* background-color:white; */
+border-radius:5px;
+opacity: 0.1;	
+}
+
 </style>
