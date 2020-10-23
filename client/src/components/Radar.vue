@@ -11,12 +11,14 @@ export default {
     data(){
             return {
                 filename:['NCon','NVol','srcip','destip','srcport','destport'],
-                values:[100,70,30,40,50,60,70,80],
+                color:["#27823B","#2857A8","#1E90FF","#70A1FF","#2ED573","#7BED9F"],
+                barcolor:["#38CCCB","#EED11A"],
+                values:[],
                 radius :80,
                 // 指标的个数，即fieldNames的长度
                 total :6,
                 // 需要将网轴分成几级，即网轴上从小到大有多少个正多边形
-                level :4,
+                level :1,
                 // 网轴的范围，类似坐标轴
                 rangeMin : 0,
                 rangeMax :80,
@@ -35,7 +37,8 @@ export default {
                 allcircledata:[],
                 circles:[],//测试数据,
                 allbardata:[],
-                barscale:null
+                barscale:null,
+                svgs:null
             };
     },
     methods:{
@@ -120,8 +123,13 @@ export default {
                     // console.log()
                 })
                 .on("mouseout",function(e,d){
-                    console.log(d);
+                    // console.log(d);
                     d3.selectAll(".area1").remove();
+                })
+                .on("click",function(e,d){
+                    let index=d3.select(this).attr("index")
+                    // console.log(that.drawcircledata[index].time)
+                    that.$store.commit("setradarTime",that.drawcircledata[index].time)
                 })
                 .attr('r', 3)
                 .attr('stroke', function(d, index) {
@@ -158,9 +166,10 @@ export default {
             let height=document.getElementById("radarcontainer").offsetHeight;
             let svg=d3.select("#radarcontainer")
                     .append("svg").attr("width","100%").attr("height","100%");
+            this.svgs=svg;
             that.main=svg.append("g")
                     .classed("main",true)
-                    .attr('transform', "translate(" + width/2 + ',' + height/2 + ')');
+                    .attr('transform', "translate(" + width/2.5 + ',' + height/2 + ')');
             that.radius=height/2-height/8;
             that.rangeMax=height/2-height/8;
             // 每项指标所在的角度
@@ -173,7 +182,7 @@ export default {
             for(var k=that.level;k>0;k--) {
                 var webs = '',
                 webPoints = [];
-                var r = k*that.radius/that.level ;
+                var r = k*(that.radius+20)/that.level ;
                 // console.log(r);
                 for(var i=0;i<that.total;i++) {
                     var x = r * Math.sin(i *  that.onePiece),
@@ -188,15 +197,28 @@ export default {
                 polygons.webs.push(webs);
                 polygons.webPoints.push(webPoints);
             }
-            var webs = that.main.append('g')
-                    .classed('webs', true);
-                webs.selectAll('polygon')
-                    .data(polygons.webs)
-                    .enter()
-                    .append('polygon')
-                    .attr('points', function(d) {
-                            return d;
-                    });
+            // var webs = that.main.append('g')
+            //         .classed('webs', true);
+            //     webs.selectAll('polygon')
+            //         .data(polygons.webs)
+            //         .enter()
+            //         .append('polygon')
+            //         .attr('points', function(d) {
+            //                 return d;
+            //         });
+            //绘制圆形边框
+            that.main.append("g")
+            .append("circle")
+            .attr("cx",0)
+            .attr("cy",0)
+            .attr("r",(that.radius+20))
+            .attr("fill","white")
+            // .attr("opacity",0)
+            .attr("z-index",-1)
+            .attr("stroke","gray")
+            .attr("stroke-width",0.1)
+
+            //绘制半径
             var lines = that.main.append('g')
                             .classed('lines', true);
                 lines.selectAll('line')
@@ -211,7 +233,10 @@ export default {
                     .attr('y2', function(d) {
                         return d.y;
                     })
-                    .attr("stroke","gray");
+                    .attr("stroke",function(d,i){
+                        return that.color[i];
+                    })
+                    .attr("stroke-width",3);
             
             // 添加g分组包含所有雷达图区域
             that.areas = that.main.append('g')
@@ -229,21 +254,22 @@ export default {
                     });
             }
             // 绘制文字标签
-            var texts = that.main.append('g')
-            .classed('texts', true);
-            texts.selectAll('text')
-            .data(textPoints)
-            .enter()
-            .append('text')
-            .attr('x', function(d) {
-                return d.x;
-            })
-            .attr('y', function(d) {
-                return d.y;
-            })
-            .text(function(d,i) {
-                return that.filename[i];
-            });
+            // var texts = that.main.append('g')
+            // .classed('texts', true);
+            // texts.selectAll('text')
+            // .data(textPoints)
+            // .enter()
+            // .append('text')
+            // .attr('x', function(d) {
+            //     return d.x;
+            // })
+            // .attr('y', function(d) {
+            //     return d.y;
+            // })
+            // .text(function(d,i) {
+            //     return that.filename[i];
+            // })
+            // .attr("font-size",8);
         },
       
         sipScale:function(){
@@ -321,11 +347,11 @@ export default {
             this.circles=[]
             var startdate=new Date(selectTime[0]);
             var enddate=new Date(selectTime[1]);
-
+            this.drawcircledata=[];
              for(let i=0;i<this.allcircledata.length;i++){
                 var currentime=new Date(this.allcircledata[i].time)
                 if(currentime>=startdate&&currentime<=enddate){
-                    // this.drawcircledata.push(this.allcircledata[i]);
+                    this.drawcircledata.push(this.allcircledata[i]);
                     let x=[];
                      //NCon,NVol,srcip,destip,srcport,destport
                     //['totalbytes','cpu_load','priority','status','NCon','NVol']
@@ -366,7 +392,7 @@ export default {
         }
        this.barscale=this.BScale(testdata);
         console.log( 2*this.radius/10)
-        const colorArray = ['#38CCCB', '#0074D9', '#2FCC40', '#FEDC00', '#FF4036', 'lightgrey'];
+        const colorArray = this.barcolor;
         let stack=d3.stack().keys(["info","warning"]).order(d3.stackOrderNone).offset(d3.stackOffsetNone);
         let series=stack(testdata);
         let index=0;
@@ -392,7 +418,7 @@ export default {
             let second=that.zb(testdata.length,(i+1),d[0]);
             let three=that.zb(testdata.length,(i+1),d[1]);
             let four=that.zb(testdata.length,i,d[1]);
-            console.log(startp,second,three,four,that.radius)
+            // console.log(startp,second,three,four,that.radius)
             if(index==1)
             {
                 return "M"+startp.x+" "+startp.y+" A "
@@ -408,6 +434,57 @@ export default {
             
         })
         }
+        ,drawlabes:function(){
+           let width=document.getElementById("radarcontainer").offsetWidth;
+           let height=document.getElementById("radarcontainer").offsetHeight;
+           let labes= this.svgs
+            .append("g")
+            .classed("labes",true)
+            .attr('transform', "translate(" + width/1.3 + ',' + (height-100) + ')');
+            //熵标签
+            labes.append("g")
+            .selectAll("rect")
+            .data(this.color)
+            .enter()
+            .append("rect")
+            .attr("x",0)
+            .attr("y",function(d,i){return 10*i})
+            .attr("width",5)
+            .attr("height",5)
+            .attr("fill",function(d){return d});
+            labes.append("g")
+            .selectAll("text")
+            .data(this.filename)
+            .enter()
+            .append("text")
+            .attr("x",10)
+            .attr("y",function(d,i){return 10*i+5})
+            .text(function(d,i) {
+                return d;
+            })
+           //info warining
+           labes.append("g")
+            .selectAll("rect")
+            .data(this.barcolor)
+            .enter()
+            .append("rect")
+            .attr("x",0)
+            .attr("y",function(d,i){return 10*i+60})
+            .attr("width",5)
+            .attr("height",5)
+            .attr("fill",function(d){return d});
+
+            labes.append("g")
+            .selectAll("text")
+            .data(["info","warning"])
+            .enter()
+            .append("text")
+            .attr("x",10)
+            .attr("y",function(d,i){return 10*i+5+60})
+            .text(function(d,i) {
+                return d;
+            })
+        }
     },
     mounted() {
        
@@ -415,7 +492,7 @@ export default {
        
         this.initchart();
         // this.drawcircle();
-        
+        this.drawlabes()
         
         
     },
@@ -440,7 +517,7 @@ export default {
             this.NConScale=this.NCScale();
             this.NVolScale=this.NVScale();
             this.circledata();
-            this.drawcircle();
+            // this.drawcircle();
             
             
             // this.drawbar()
@@ -459,7 +536,7 @@ export default {
     top: 25.7%;
     width: 30%;
     height: 35%;
-    background-color: #e8e9f0;
+    /* background-color: #e8e9f0; */
     
 }
 #radarcontainer{
@@ -470,14 +547,15 @@ export default {
 fill: white;
 fill-opacity: 0.5;
 stroke: gray;
-stroke-dasharray: 10 5;
+/* stroke-dasharray: 10 5; */
 }
 .areas polygon {
 fill-opacity: 0.5;
-stroke-width: 3;
+stroke-width: 1;
 }
 .areas circle {
 fill: white;
-stroke-width: 3;
+stroke-width: 1;
+
 }
 </style>
