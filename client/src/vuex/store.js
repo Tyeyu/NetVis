@@ -7,7 +7,8 @@ const store= new Vuex.Store({
         SelectTime:["2013-04-10 07:05:00","2013-04-10 7:15:00"],
         ipsdata:null,
         //点击雷达图的圆选择时间段
-        radarTime:null
+        radarTime:null,
+        printStr:""
     },
     mutations:{
         setRadardata:function(state,data){
@@ -21,6 +22,9 @@ const store= new Vuex.Store({
         },
         setradarTime:function(state,time){
             state.radarTime=time;
+        },
+        setprintStr:function(state,data){
+            state.printStr=data;
         }
     },
     getters:{
@@ -35,6 +39,9 @@ const store= new Vuex.Store({
         },
         getradarTime:state=>{
             return state.radarTime;
+        },
+        getprintStr:state=>{
+            return state.printStr;
         }
     }
 })

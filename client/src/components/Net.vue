@@ -125,7 +125,7 @@ export default {
                   .attr("stroke-width",1)
                   .attr("stroke","gray")
                   .on("click",function(e,d){
-                   
+                      that.$store.commit("setprintStr",d.link);
                       let ports=that.allLinkmap.get(d.link).port;
                       let portmap=new Map();
                       for(let i=0;i<ports.length;i++){
@@ -170,7 +170,7 @@ export default {
                         .attr("width",width/2.2)
                         .attr("height",height)
                         .classed("rect_port",true)
-                        .attr('transform', "translate(" + (width/21) + ',' + 0 + ')')
+                        .attr('transform', "translate(" + (width/30) + ',' + 0 + ')')
 
 
             svg_port.append("g").append("text").attr("x",width/5).attr("y",10).text("Source Port");

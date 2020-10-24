@@ -11,6 +11,7 @@
       <Radar id="radar"></Radar>
       <Parallel id="parallel"></Parallel>
       <Net id="net"></Net>
+      <Print id="print"></Print>
     </div>
   </div>
 </template>
@@ -20,6 +21,7 @@
     import Radar from "./components/Radar";
     import Parallel from "./components/Parallel";
     import Net from "./components/Net";
+    import Print from "./components/Print";
     export default {
         name: "App",
         components: {
@@ -27,6 +29,7 @@
             Radar,
             Parallel,
             Net,
+            Print
         },
         data () {
             return {

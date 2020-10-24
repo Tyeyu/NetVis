@@ -128,9 +128,16 @@ export default {
                     d3.selectAll(".area1").remove();
                 })
                 .on("click",function(e,d){
-                    let index=d3.select(this).attr("index")
+                    let i=d3.select(this).attr("index")
                     // console.log(that.drawcircledata[index].time)
-                    that.$store.commit("setradarTime",that.drawcircledata[index].time)
+                    that.$store.commit("setprintStr",that.drawcircledata[i].time);
+                    that.$store.commit("setprintStr","NCon:"+that.drawcircledata[i].NCon+"\n"
+                            +"NVol:"+that.drawcircledata[i].NVol+"\n"
+                            +"EntropySIP:"+that.drawcircledata[i].srcip+"\n"
+                            +"EntropyDIP:"+that.drawcircledata[i].destip+"\n"
+                            +"EntropySPort:"+that.drawcircledata[i].srcport+"\n"
+                            +"EntropyDPort:"+that.drawcircledata[i].destport)
+                    that.$store.commit("setradarTime",that.drawcircledata[i].time)
                 })
                 .attr('r', 3)
                 .attr('stroke', function(d, index) {
@@ -540,6 +547,7 @@ export default {
             // this.drawbar()
         },
         SelectTime:function(newval,oldval){
+            this.$store.commit("setprintStr",newval[0]+"——"+newval[1]);
             this.circledata();
             this.drawcircle();
             this.drawbar();
