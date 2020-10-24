@@ -8,8 +8,8 @@
 var mysql = {
     host: "127.0.0.1",
     user: "root",
-    password: "1234",
-    database: "test01",
+    password: "123456",
+    database: "netvis_db",
     port: 3306
 };
 module.exports = mysql;

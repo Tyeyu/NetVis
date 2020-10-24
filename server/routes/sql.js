@@ -3,6 +3,8 @@ var user = {
     update:'UPDATE user SET name=?, age=? WHERE id=?',
     delete: 'DELETE FROM user WHERE id=?',
     queryById: 'SELECT * FROM user WHERE id=?',
-    queryAll: "SELECT * FROM ipPair "
+    queryAll: "SELECT * FROM ipPair ",
+    queryIPS: 'select * from ips_data',
+    queryNF: 'select * from nf_data',
 };
 module.exports = user;

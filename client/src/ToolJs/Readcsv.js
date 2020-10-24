@@ -17,6 +17,12 @@ const readcsv = {
         result.then(function(data){
             store.commit("setipsdata",data.data.data)
         })
-    }
+    },
+  GetParallel_data:function(startT,endT){
+    let result=axios.get("http://127.0.0.1:3000/parallel",{params:{start:startT,end:endT}});
+    result.then(function(data){
+      store.commit("setParallelData",data.data)
+    })
+  }
 }
 export default readcsv;

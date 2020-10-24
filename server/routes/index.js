@@ -12,5 +12,10 @@ router.get('/', function(req, res, next) {
   // res.render('index', { title: 'Express' });
 });
 
+router.get('/parallel',(req,res)=>{
+    user.queryTest(req,data=>{
+        res.send(data)
+    })
+})
 
 module.exports = router;

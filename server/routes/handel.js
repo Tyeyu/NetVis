@@ -32,6 +32,49 @@ var userData = {
                 connection.release();
             });
         });
+    },
+    queryTest:(req,res)=>{
+        pool.getConnection((err, connection)=> {
+            connection.query(`${sql.queryNF} where parsedDate >= '2013-04-14 02:12:00' and parsedDate >= '2013-04-14 02:12:26'`, function(err, nf_data) {
+                connection.query(`${sql.queryIPS} where dateTime >= '2013-04-14 02:12:00' and dateTime >= '2013-04-14 02:12:26'`, function(err, ips_data) {
+                    nf_data = nf_data.map(d => {
+                        return {
+                            SrcIp: d.firstSeenSrcIp,
+                            dateTime: (d.parsedDate).slice(0,19),
+                            srcPort: parseInt(d.firstSeenSrcPort),
+                            destPort: parseInt(d.firstSeenDestPort),
+                            destIp: d.firstSeenDestIp,
+                            durationSeconds:d.durationSeconds,
+                            srcPayloadBytes:d.firstSeenSrcPayloadBytes,
+                            destPayloadBytes:d.firstSeenDestPayloadBytes,
+                            srcTotalBytes:d.firstSeenSrcTotalBytes,
+                            destTotalBytes:d.firstSeenDestTotalBytes,
+                            srcPacketCount:d.firstSeenSrcPacketCount,
+                            destPacketCount:d.firstSeenDestPacketCount,
+                            ips:false
+                        }
+                    });
+                    ips_data = ips_data.map(d => {
+                        return {
+                            SrcIp: d.SrcIp,
+                            dateTime: (d.dateTime).slice(0,19),
+                            srcPort: parseInt(d.srcPort),
+                            destPort: parseInt(d.destPort),
+                            destIp: d.destIp,
+                        }
+                    });
+
+                    nf_data.forEach(d=>{
+                        d.ips = ips_data.findIndex(s => s.SrcIp === d.SrcIp && s.destIp === d.destIp) !== -1;
+                    })
+
+                    res(nf_data)
+                    connection.release();
+
+                })
+            });
+
+        });
     }
 };
 module.exports = userData;
