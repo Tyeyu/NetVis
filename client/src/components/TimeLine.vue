@@ -1,3 +1,12 @@
+<!--
+ * @Descripttion: Draw timeline and related functions
+ * @version: v1.00
+ * @Author: Weixin Zhao
+ * @Date: 2020/10/13
+ * @LastEditors: Weixin Zhao
+ * @LastEditTime: 2020/11/02
+--> 
+
 <template>
     <div id='TimelineContainer'>
         <div id='TimelineTitle'>
@@ -33,7 +42,7 @@ export default {
             },
             startTime: null,
             endTime: null,
-            linelist: ['status', 'priority', 'cpu_load', 'totalbytes', 'srcip_entropy', 'destip_entropy', 'srcport_entropy', 'destport_entropy'],
+            linelist: ['status', 'cpu_load', 'NCon', 'NVol', 'srcip_entropy', 'destip_entropy', 'srcport_entropy', 'destport_entropy'],
             listDict:{
                 'status': {
                     'Title': 'Status',
@@ -51,6 +60,14 @@ export default {
                     'Title': 'Total Bytes',
                     'Color': '#747d8c'
                 },
+                'NCon':{
+                    'Title': 'Connection',
+                    'Color': '#eccc68'
+                },
+                'NVol':{
+                    'Title': 'Volume',
+                    'Color': '#ff6348'
+                },
                 'srcip_entropy': {
                     'Title': 'Srcip',
                     'Color': '#1e90ff'
@@ -65,10 +82,11 @@ export default {
                 },
                 'destport_entropy': {
                     'Title': 'Destport',
-                    'Color': '#7bed9f'
+                    'Color': '#5352ed'
                 }
             },
-            ScaleYOverview: []
+            ScaleYOverview: [],
+            TimePeriod:[]
         }
     },
     mounted(){
@@ -170,7 +188,7 @@ export default {
             })
 
             //line container position calculation
-            let gap = Math.floor((ContainerSpace - 2) / 2),
+            let gap = Math.floor((ContainerSpace / 2) - 3),
                 ConOverviewLineTitle = ConOverview.append('g').attr('id', 'ConOverviewLineTitle')
                     .attr('transform', 'translate(0,' + ContainerOverviewMargin.top + ')')
             for(let i=0; i<ContainerSpace; i++){
@@ -300,6 +318,11 @@ export default {
         //draw bottom axis
         },
         ChartDetailInit(TimePeriod){
+            /* INIT BASIC ATTRIBUTION
+            *  This part is used to calculate related attribution of graphs, including width, height, margin, container, scale
+            *  Preparing Scale Range
+            */
+
             // clear container
             d3.select('#TimelineGraph-Details').style('opacity', 1).transition(300).style('opacity', 0)
             d3.select('#TimelineGraph-Details').html('')
@@ -342,7 +365,7 @@ export default {
 
             // ScaleY customization & line container customization
             let ScaleYDetails = null,
-                linelist = ['srcip_entropy', 'destip_entropy', 'srcport_entropy', 'destport_entropy'],
+                linelist = ['NCon', 'NVol','srcip_entropy', 'destip_entropy', 'srcport_entropy', 'destport_entropy'],
                 linelistmax = 0,
                 linelistmin = 0
             
@@ -356,33 +379,142 @@ export default {
                     linelistmin = min
                 }
             })
+            
+            // modified domain[linelistmin, linelistmax] to [0, 1]
+            ScaleYDetails = d3.scaleLinear().domain([0, 1]).range([ContainerDetailsHeight - ContainerDetailsMargin.top - ContainerDetailsMargin.bottom, 0])
 
-            ScaleYDetails = d3.scaleLinear().domain([linelistmin, linelistmax]).range([ContainerDetailsHeight - ContainerDetailsMargin.top - ContainerDetailsMargin.bottom, 0])
+            /* DRAG RECT GENERATE
+            *  This part is used to generate drag rect.
+            *  To achieve the goal of removing brush, we should select those brush and remove them firstly. Then, we reset brush id container. Finally, calling draw brush function to restart.
+            *  The functions include brushGenerator, brushDraw, brushRemove, brushEvent, updateTimePeriod, 5MinitesTimeCalculator
+            */
 
-            //svg drag
-            let brushX = d3.brushX().extent([[0,0],[ContainerDetailsWidth - ContainerDetailsMargin.left - ContainerDetailsMargin.right, ContainerDetailsHeight - ContainerDetailsMargin.top - ContainerDetailsMargin.bottom]])
-                    .on("end", brushended),
-                ConDetailsAllLine = ConDetails.append('g')
+            //brush DOM element
+            let gBrushes = ConDetails.append('g')
                     .attr('height', ContainerDetailsHeight - ContainerDetailsMargin.top - ContainerDetailsMargin.bottom)
                     .attr('width', () => { return ContainerDetailsWidth - ContainerDetailsMargin.left - ContainerDetailsMargin.right})
                     .attr('transform', () => {return 'translate('+ ContainerDetailsMargin.left + ',0)'})
-                    .attr('id', 'ConDetailsAllLine')
-                    .call(brushX)
+                    .attr('id', 'gBrushes')
+                    .attr('class', 'brushes')
+                    .on('dbclick', () => {
+                        self.$store.commit('cleanSelectTime')
+                    })
+            //stroe brushes
+            let brushes = []
+
+            function newBrush(){
+                let brushX = d3.brushX().extent([[0,0],[ContainerDetailsWidth - ContainerDetailsMargin.left - ContainerDetailsMargin.right, ContainerDetailsHeight - ContainerDetailsMargin.top - ContainerDetailsMargin.bottom]])
+                        .on("start", brushstart)
+                        .on("brush", brushed)
+                        .on("end", brushended)
+                brushes.push({id: brushes.length, brush: brushX});
+                function brushstart(){}
+                function brushed(){}
+                function brushended(event){
+                    let lastBrushID = brushes[brushes.length - 1].id;
+                    let lastBrush = document.getElementById('brush-' + lastBrushID)
+                    let selection = d3.brushSelection(lastBrush)
+
+                    if(selection && selection[0] !== selection[1]){
+                        newBrush();
+                    }
+                    updateTimeperiod()
+                }
+                //always draw brushes
+                drawBrushes();
+            }
+
+            function drawBrushes(){
+                let brushSelection = gBrushes
+                    .selectAll('.brush')
+                    .data(brushes, function (d){return d.id});
+
+                    // Set up new brushes
+                brushSelection.enter()
+                    .insert("g", '.brush')
+                    .attr('class', 'brush')
+                    .attr('id', function(brush){ return "brush-" + brush.id; })
+                    .each(function(brushObject) {
+                        //call the brush
+                        brushObject.brush(d3.select(this));
+                    });
+
+                brushSelection
+                    .each(function (brushObject){
+                    d3.select(this)
+                        .attr('class', 'brush')
+                        .selectAll('.overlay')
+                        .style('pointer-events', function() {
+                            var brush = brushObject.brush;
+                            if (brushObject.id === brushes.length-1 && brush !== undefined) {
+                                return 'all';
+                            } else {
+                                return 'none';
+                            }
+                        });
+                    })
+
+                brushSelection.exit()
+                    .remove();
+            }
+
+            function createCleanButton(){
+                //operate dom to create click button
+                let btn = document.createElement("BUTTON");
+                let span = document.createElement("SPAN");
+                let translate = 'translate(' + (-(ContainerDetailsWidth - ContainerDetailsMargin.left / 6)) + 'px,' + (ContainerDetailsHeight / 4) + 'px)'
+                span.innerHTML = "Clean"
+                btn.setAttribute('Class', 'cleanbutton')
+                btn.style.position = 'absolute'
+                btn.style.transform = translate
+
+                btn.addEventListener('click', () => {
+                    removeBrush()
+                })
+                btn.appendChild(span)
+                document.getElementById('TimelineGraph-Details').appendChild(btn)
+            }
+
+            function removeBrush(){
+                // remove brush element
+                brushes.forEach((d,i) => {
+                        let brushTemp = document.getElementById('brush-' + d.id)
+                        brushTemp.remove();
+                })
+                brushes = []
+                newBrush()
+            }
+
+            function updateTimeperiod(){
+                let timeperiodlist = []
+                brushes.forEach((d,i) => {
+                    let brushTemp = document.getElementById('brush-' + d.id)
+                    let selection = d3.brushSelection(brushTemp)
+                    if (!selection) return;
+                    let [x0, x1] = selection.map(v => ScaleXDetails(DateConvert5Min(ScaleXDetails.invert(v))))
+                    let t0 = new Date(DateConvert5Min(ScaleXDetails.invert(selection[0]))).format("yyyy-MM-dd hh:mm:ss"),
+                        t1 = new Date(DateConvert5Min(ScaleXDetails.invert(selection[1]))).format("yyyy-MM-dd hh:mm:ss")
+                    timeperiodlist.push([t0, t1])
+                })
+                self.$store.commit('setSelectTime', timeperiodlist)
+            }
 
             function DateConvert5Min(date){
                 return Math.floor(date.getTime() / 300000) * 300000
             }
             
-            function brushended(event) {
-                const selection = event.selection;
-                if (!event.sourceEvent || !selection) return;
-                let [x0, x1] = selection.map(d => ScaleXDetails(DateConvert5Min(ScaleXDetails.invert(d))))
-                d3.select(this).transition().call(brushX.move, [x0, x1]);
-                let t0 = new Date(DateConvert5Min(ScaleXDetails.invert(selection[0]))).format("yyyy-MM-dd hh:mm:ss"),
-                    t1 = new Date(DateConvert5Min(ScaleXDetails.invert(selection[1]))).format("yyyy-MM-dd hh:mm:ss")
-                self.$store.commit('setSelectTime', [t0, t1])
-                //self.ChartDetailInit({start: new Date(DateConvert5Min(ScaleXDetails.invert(selection[0]))), end: new Date(DateConvert5Min(ScaleXDetails.invert(selection[1])))})
-            }
+            createCleanButton()
+            newBrush();
+            drawBrushes();
+
+            /* DRAW LINE
+            *  This part is used to draw line chart.
+            *  Firstly, construct the container to store every line. The information of line have container entity, line entity
+            *  Second, drawing xAxis, yAxis.
+            *  Then, append text to show line type.
+            *  Finally, add beauty bar.
+            *  include brushGenerator, brushDraw, brushRemove, brushEvent, updateTimePeriod, 5MinitesTimeCalculator
+            */
 
             //Add line
             let ContainerLineEntity = {},
@@ -399,6 +531,8 @@ export default {
                 linedata.forEach((v,i) => {
                     drawdata.push({'x': v['time'], 'y': v[d]})
                 })
+                // 0-1
+                drawdata = self.normalizing(drawdata)
                 ContainerLineEntity[d] = {}
                 ContainerLineEntity[d]['line'] = ConDetailsLines.append('path')
                     .datum(drawdata)
@@ -428,10 +562,16 @@ export default {
                 .attr('width', 5)
                 .attr('height', () => {return ContainerDetailsHeight - ContainerDetailsMargin.top - ContainerDetailsMargin.bottom})
                 .style('fill', 'grey')
-                
             
-
-            
+        },
+        normalizing(list){
+            let max = Math.max.apply(Math, list.map((d) => {return d['y']})),
+                min = Math.min.apply(Math, list.map((d) => {return d['y']}))
+            let temp = []
+            list.forEach((d,i) => {
+                temp.push({'x': d['x'], 'y': ((d['y'] - min)/(max - min))})
+            })
+            return temp
         },
         DataInit(){
             let self = this;
@@ -439,7 +579,7 @@ export default {
             d3.csv('static/timeline.csv', (d) => {
                 //totalbytes,cpu_load,priority,status,NCon,NVol,srcip_entropy,destip_entropy,srcport_entropy,destport_entropy
                 let keys = Object.keys(d),
-                    val = Object.values(d),
+                    val = Object.values(d), 
                     obj = {}
                 keys.forEach((v, j) => {
                     if(v == 'time'){
@@ -510,5 +650,49 @@ export default {
 #TimeLabel{
     position: absolute;
     opacity: 0;
+}
+
+.brush .selection {
+    fill: grey;
+    opacity: 0.8;
+}
+
+.cleanbutton {
+  border-radius: 8px;
+  background-color: #4CAF50;
+  border: none;
+  color: #FFFFFF;
+  text-align: center;
+  font-size: 12px;
+  width: 60px;
+  height: 20px;
+  transition: all 0.5s;
+  cursor: pointer;
+  outline: 0px;
+}
+
+.cleanbutton span {
+  cursor: pointer;
+  display: inline-block;
+  position: relative;
+  transition: 0.5s;
+}
+
+.cleanbutton span:after {
+  content: '\00bb';
+  position: absolute;
+  opacity: 0;
+  top: 0;
+  right: -20px;
+  transition: 0.5s;
+}
+
+.cleanbutton:hover span {
+  padding-right: 10px;
+}
+
+.cleanbutton:hover span:after {
+  opacity: 1;
+  right: 0;
 }
 </style>

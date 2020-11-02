@@ -21,6 +21,9 @@ const store= new Vuex.Store({
     setParallelData:function(state,data){
       state.parallel_data=data;
     },
+    cleanSelectTime: function(state){
+      state.SelectTime = []
+    }
   },
   getters:{
     getRadardata:state=>{
